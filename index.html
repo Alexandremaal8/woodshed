@@ -1,0 +1,2684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#120f0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Woodshed">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Woodshed</title>
+<style>:root {
+  --bg: #120f0d;
+  --bg2: #1b1714;
+  --card: #221d19;
+  --card2: #2b2520;
+  --line: #3a322b;
+  --text: #f4ede4;
+  --muted: #a89a8b;
+  --accent: #f2a541;
+  --accent2: #ffcf7a;
+  --good: #4fc18f;
+  --bad: #ef5d5d;
+  --blue: #6cb4ee;
+  --radius: 16px;
+  --tabh: 64px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; font-size: 16px; -webkit-font-smoothing: antialiased; overscroll-behavior: none; }
+body { min-height: 100vh; min-height: 100dvh; }
+button { font: inherit; color: inherit; border: none; background: none; cursor: pointer; }
+input, select, textarea { font: inherit; color: var(--text); background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; width: 100%; outline: none; }
+input:focus, select:focus { border-color: var(--accent); }
+a { color: var(--accent); }
+h1, h2, h3 { margin: 0; letter-spacing: -0.02em; }
+h1 { font-size: 28px; font-weight: 800; }
+h2 { font-size: 21px; font-weight: 750; }
+h3 { font-size: 17px; font-weight: 700; }
+p { line-height: 1.5; margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.tiny { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+
+#app { padding: calc(var(--safe-t) + 14px) 16px calc(var(--tabh) + var(--safe-b) + 24px); max-width: 640px; margin: 0 auto; }
+#app.fullscreen { padding-bottom: calc(var(--safe-b) + 24px); }
+
+.row { display: flex; align-items: center; gap: 10px; }
+.between { justify-content: space-between; }
+.wrap { flex-wrap: wrap; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.grow { flex: 1; min-width: 0; }
+.stack > * + * { margin-top: 14px; }
+.center { text-align: center; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.card.tap { cursor: pointer; transition: transform .12s ease, background .12s; }
+.card.tap:active { transform: scale(.985); background: var(--card2); }
+.card.hero { background: linear-gradient(150deg, #3a2a17 0%, #261d15 55%, #1f1915 100%); border-color: #5a4126; }
+.card.dim { opacity: .55; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 18px; border-radius: 14px; font-weight: 700; background: var(--card2); border: 1px solid var(--line); min-height: 48px; transition: transform .1s; user-select: none; }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--accent); color: #241505; border-color: var(--accent); }
+.btn.good { background: var(--good); color: #062517; border-color: var(--good); }
+.btn.danger { background: transparent; color: var(--bad); border-color: #5a2a2a; }
+.btn.ghost { background: transparent; }
+.btn.block { width: 100%; }
+.btn.big { min-height: 60px; font-size: 18px; border-radius: 18px; }
+.btn.sm { min-height: 36px; padding: 7px 12px; font-size: 14px; border-radius: 10px; }
+.btn[disabled] { opacity: .4; pointer-events: none; }
+.iconbtn { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: var(--card2); border: 1px solid var(--line); font-size: 18px; }
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { padding: 9px 14px; border-radius: 999px; background: var(--card2); border: 1px solid var(--line); font-weight: 650; font-size: 14px; }
+.chip.on { background: var(--accent); color: #241505; border-color: var(--accent); }
+.chip.locked { opacity: .5; }
+
+.tabs { position: fixed; left: 0; right: 0; bottom: 0; height: calc(var(--tabh) + var(--safe-b)); padding-bottom: var(--safe-b); background: rgba(18,15,13,.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); display: flex; z-index: 20; }
+.tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 11px; font-weight: 650; }
+.tabs button svg { width: 24px; height: 24px; }
+.tabs button.on { color: var(--accent); }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 10px; }
+.levelchip { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; font-weight: 700; font-size: 14px; }
+.levelchip .lv { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #241505; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+
+.bar { height: 8px; background: var(--bg2); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width .4s; }
+.bar.good > i { background: var(--good); }
+
+.weekdots { display: flex; gap: 8px; }
+.weekdots i { width: 28px; height: 28px; border-radius: 50%; border: 2px dashed var(--line); display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 14px; }
+.weekdots i.on { background: var(--good); border: 2px solid var(--good); color: #062517; }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 99px; font-size: 12px; font-weight: 700; background: var(--card2); border: 1px solid var(--line); color: var(--muted); }
+.badge.accent { color: var(--accent); border-color: #5a4126; }
+.badge.good { color: var(--good); border-color: #23543d; }
+
+.fbwrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -16px; padding: 4px 16px; scrollbar-width: none; }
+.fbwrap::-webkit-scrollbar { display: none; }
+svg.fb { display: block; touch-action: manipulation; }
+svg.fb .cell { fill: transparent; cursor: pointer; }
+svg.fb .mark circle { stroke-width: 2; }
+svg.fb text { font-family: inherit; pointer-events: none; }
+
+.option { width: 100%; text-align: left; padding: 15px 16px; border-radius: 14px; background: var(--card2); border: 1.5px solid var(--line); font-weight: 600; font-size: 16px; }
+.option.right { border-color: var(--good); background: rgba(79,193,143,.14); }
+.option.wrong { border-color: var(--bad); background: rgba(239,93,93,.12); }
+.feedback { border-radius: 14px; padding: 14px; }
+.feedback.ok { background: rgba(79,193,143,.12); border: 1px solid #23543d; }
+.feedback.no { background: rgba(239,93,93,.1); border: 1px solid #5a2a2a; }
+
+.dots { display: flex; gap: 6px; justify-content: center; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
+.dots i.on { background: var(--accent); width: 20px; border-radius: 99px; }
+
+.lessoncard { min-height: 220px; display: flex; flex-direction: column; gap: 12px; }
+.lessoncard p b { color: var(--accent2); }
+
+.blockhead { display: flex; gap: 6px; }
+.blockhead i { flex: 1; height: 5px; border-radius: 9px; background: var(--line); }
+.blockhead i.on { background: var(--accent); }
+.blockhead i.done { background: var(--good); }
+
+.timer { font-variant-numeric: tabular-nums; font-weight: 800; }
+.chordbig { font-size: 54px; font-weight: 850; letter-spacing: -0.03em; line-height: 1; }
+.recdot { width: 12px; height: 12px; border-radius: 50%; background: var(--bad); display: inline-block; animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: .3; } }
+.meter { height: 10px; background: var(--bg2); border-radius: 9px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--good), var(--accent) 75%, var(--bad)); transition: width .06s; }
+.recbtn { width: 84px; height: 84px; border-radius: 50%; background: var(--bad); border: 5px solid #4a2020; box-shadow: 0 0 0 3px var(--bad); display: flex; align-items: center; justify-content: center; }
+.recbtn.on { border-radius: 26px; }
+.recbtn span { width: 30px; height: 30px; border-radius: 50%; background: #fff; }
+.recbtn.on span { border-radius: 6px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(var(--tabh) + var(--safe-b) + 14px); transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--card2); border: 1px solid var(--accent); color: var(--text); padding: 10px 16px; border-radius: 99px; font-weight: 700; font-size: 14px; z-index: 100; transition: all .25s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 50; display: flex; align-items: flex-end; justify-content: center; animation: fadein .15s; }
+.modal { background: var(--bg2); border: 1px solid var(--line); border-radius: 22px 22px 0 0; padding: 20px 18px calc(var(--safe-b) + 20px); width: 100%; max-width: 640px; max-height: 88vh; overflow: auto; animation: slideup .2s ease; }
+.modal.centered { border-radius: 22px; margin: auto 16px; }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes slideup { from { transform: translateY(40px); opacity: .5; } }
+.celebrate { text-align: center; padding: 10px 0 4px; }
+.celebrate .big { font-size: 64px; }
+
+.list > * + * { margin-top: 10px; }
+.rec .play { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); color: #241505; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rec .play svg { width: 20px; height: 20px; }
+.rec.sel { border-color: var(--blue); }
+.seek { height: 6px; background: var(--bg2); border-radius: 9px; overflow: hidden; margin-top: 8px; }
+.seek i { display: block; height: 100%; width: 0; background: var(--accent); }
+
+.ring { position: relative; width: 120px; height: 120px; }
+.ring svg { transform: rotate(-90deg); }
+.ring .lbl { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.stat b { display: block; font-size: 22px; font-weight: 800; }
+
+.toggle { position: relative; width: 50px; height: 30px; border-radius: 99px; background: var(--line); flex-shrink: 0; transition: background .2s; }
+.toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.toggle.on { background: var(--good); }
+.toggle.on::after { transform: translateX(20px); }
+
+.chapter .num { width: 44px; height: 44px; border-radius: 12px; background: var(--card2); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.lessonrow { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
+.lessonrow:last-child { border-bottom: none; }
+.check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.check.on { background: var(--good); border-color: var(--good); color: #062517; }
+.slider { -webkit-appearance: none; appearance: none; height: 6px; padding: 0; border: none; background: var(--line); border-radius: 9px; }
+.slider::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); border: none; }
+.beat { width: 14px; height: 14px; border-radius: 50%; background: var(--line); transition: background .05s; }
+.beat.on { background: var(--accent); }
+.help p + p { margin-top: 8px; }
+.hr { height: 1px; background: var(--line); margin: 6px 0; }
+
+/* ===================== Bubble theme ===================== */
+:root { --radius: 26px; }
+body { background:
+  radial-gradient(120% 60% at 50% -10%, rgba(242,165,65,.16) 0%, rgba(242,165,65,0) 60%),
+  radial-gradient(80% 50% at 100% 100%, rgba(108,180,238,.06) 0%, rgba(0,0,0,0) 60%),
+  var(--bg); background-attachment: fixed; }
+
+/* cards: soft, layered */
+.card { border-radius: var(--radius); background: linear-gradient(180deg, #27211c 0%, #1f1a16 100%); border: 1px solid rgba(255,255,255,.06);
+  box-shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 10px 30px rgba(0,0,0,.35); }
+.card.hero { background: radial-gradient(130% 120% at 0% 0%, #5a3a1a 0%, #33241a 45%, #211a15 100%); border: 1px solid rgba(242,165,65,.28);
+  box-shadow: 0 1px 0 rgba(255,220,160,.12) inset, 0 16px 40px rgba(0,0,0,.45), 0 0 50px rgba(242,165,65,.08); }
+
+/* bubble buttons */
+.btn { border-radius: 999px; border: none; padding: 13px 22px;
+  background: linear-gradient(180deg, #3b332c 0%, #2a241f 100%);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.12), inset 0 -2px 0 rgba(0,0,0,.25), 0 4px 12px rgba(0,0,0,.3);
+  transition: transform .15s cubic-bezier(.3,1.6,.5,1), box-shadow .15s; }
+.btn:active { transform: scale(.94); box-shadow: inset 0 2px 6px rgba(0,0,0,.35); }
+.btn.primary { color: #2a1704; background: linear-gradient(180deg, #ffd48a 0%, #f6a83e 55%, #e88a22 100%);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.55), inset 0 -3px 0 rgba(150,70,0,.35), 0 8px 22px rgba(242,150,50,.38); }
+.btn.good { background: linear-gradient(180deg, #7ee0b1 0%, #3fb37f 100%); box-shadow: inset 0 2px 0 rgba(255,255,255,.45), inset 0 -3px 0 rgba(0,80,40,.3), 0 8px 20px rgba(79,193,143,.3); }
+.btn.danger { background: linear-gradient(180deg, #3a2222 0%, #2a1a1a 100%); color: #ff8a8a; }
+.btn.ghost { background: transparent; box-shadow: none; color: var(--muted); }
+.btn.big { min-height: 64px; font-size: 20px; letter-spacing: -0.01em; }
+.btn.sm { border-radius: 999px; padding: 8px 14px; }
+.iconbtn { border-radius: 50%; border: none; background: linear-gradient(180deg, #3b332c, #2a241f); box-shadow: inset 0 1.5px 0 rgba(255,255,255,.12), 0 4px 10px rgba(0,0,0,.3); }
+.iconbtn:active { transform: scale(.92); }
+
+/* chips = small bubbles */
+.chip { border: none; padding: 10px 16px; background: linear-gradient(180deg, #3a322b, #2a241f);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.1), 0 3px 8px rgba(0,0,0,.25); transition: transform .15s cubic-bezier(.3,1.6,.5,1); }
+.chip:active { transform: scale(.93); }
+.chip.on { color: #2a1704; background: linear-gradient(180deg, #ffd48a, #f2a541); box-shadow: inset 0 2px 0 rgba(255,255,255,.5), 0 4px 14px rgba(242,165,65,.35); }
+
+/* answer options as bubbles */
+.option { border-radius: 22px; border: 1.5px solid transparent; background: linear-gradient(180deg, #332c26, #28221d);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.08), 0 4px 12px rgba(0,0,0,.25); transition: transform .15s cubic-bezier(.3,1.6,.5,1); }
+.option:active { transform: scale(.97); }
+.option.right { border-color: var(--good); background: linear-gradient(180deg, rgba(79,193,143,.28), rgba(79,193,143,.12)); animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
+.option.wrong { border-color: var(--bad); background: linear-gradient(180deg, rgba(239,93,93,.25), rgba(239,93,93,.1)); animation: shake .3s; }
+@keyframes pop { 50% { transform: scale(1.04); } }
+@keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.feedback { border-radius: 20px; }
+
+/* segmented bubble switch */
+.seg { display: flex; padding: 4px; border-radius: 999px; background: rgba(0,0,0,.35); box-shadow: inset 0 2px 6px rgba(0,0,0,.4); }
+.seg button { flex: 1; padding: 10px 8px; border-radius: 999px; font-weight: 700; font-size: 14px; color: var(--muted); transition: all .2s; }
+.seg button.on { color: #2a1704; background: linear-gradient(180deg, #ffd48a, #f2a541); box-shadow: inset 0 2px 0 rgba(255,255,255,.5), 0 3px 10px rgba(242,165,65,.35); }
+
+/* quick tiles */
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tile { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 6px 12px; border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02)); box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  transition: transform .15s cubic-bezier(.3,1.6,.5,1); }
+.tile:active { transform: scale(.93); }
+.tile b { font-size: 14px; }
+.tile small { font-size: 11px; color: var(--muted); }
+.bubble { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 25px;
+  background: radial-gradient(circle at 35% 30%, #5a4430 0%, #2e241c 70%);
+  box-shadow: inset 0 2px 3px rgba(255,255,255,.18), inset 0 -4px 8px rgba(0,0,0,.35), 0 5px 12px rgba(0,0,0,.35); }
+
+/* tab bar: floating bubble */
+.tabs { left: 12px; right: 12px; bottom: calc(var(--safe-b) + 10px); height: var(--tabh); padding-bottom: 0; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.08); background: rgba(34,28,24,.82); box-shadow: 0 12px 30px rgba(0,0,0,.5); max-width: 616px; margin: 0 auto; }
+.tabs button { border-radius: 999px; margin: 6px 2px; transition: all .2s; }
+.tabs button.on { background: rgba(242,165,65,.14); }
+#app { padding-bottom: calc(var(--tabh) + var(--safe-b) + 34px); }
+
+/* misc polish */
+.levelchip { border: none; background: linear-gradient(180deg, #3a322b, #2a241f); box-shadow: inset 0 1.5px 0 rgba(255,255,255,.1), 0 4px 12px rgba(0,0,0,.3); }
+.levelchip .lv { background: linear-gradient(180deg, #ffd48a, #f2a541); box-shadow: inset 0 2px 0 rgba(255,255,255,.5); }
+.badge { border: none; background: rgba(255,255,255,.07); }
+.badge.accent { background: rgba(242,165,65,.15); }
+.badge.good { background: rgba(79,193,143,.15); }
+.weekdots i { width: 32px; height: 32px; }
+.weekdots i.on { background: radial-gradient(circle at 35% 30%, #8ae8bc, #3fb37f); border: none; box-shadow: 0 3px 10px rgba(79,193,143,.35); }
+.bar { height: 10px; background: rgba(0,0,0,.35); box-shadow: inset 0 1px 3px rgba(0,0,0,.4); }
+.stat { border-radius: 22px; border: none; background: linear-gradient(180deg, #27211c, #1f1a16); box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 6px 16px rgba(0,0,0,.3); }
+input, select { border-radius: 18px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.08); }
+.chapter .num, .check { box-shadow: inset 0 1px 2px rgba(255,255,255,.1); }
+.chapter .num { border-radius: 50%; background: radial-gradient(circle at 35% 30%, #4a3a2c, #2a221c); }
+.recbtn { background: radial-gradient(circle at 35% 30%, #ff8a8a, #e04848); box-shadow: 0 0 0 4px rgba(239,93,93,.35), 0 10px 26px rgba(239,93,93,.35); border: none; }
+.modal { border-radius: 30px 30px 0 0; background: linear-gradient(180deg, #241e1a, #1a1613); }
+.modal.centered { border-radius: 30px; }
+.toast { border: none; background: linear-gradient(180deg, #3a322b, #2a241f); box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 0 0 1px rgba(242,165,65,.4); }
+.lessoncard { min-height: 240px; }
+.toggle { box-shadow: inset 0 2px 4px rgba(0,0,0,.35); }
+.toggle::after { box-shadow: 0 2px 5px rgba(0,0,0,.35); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ---------- Music theory helpers ----------
+const SHARPS = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLATS  = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const FLAT_KEYS = new Set(['F','Bb','Eb','Ab','Db','Gb','D minor','G minor','C minor','F minor','Bb minor','Eb minor']);
+
+// Standard tuning, low to high. index 0 = low E (6th string)
+const STRINGS = [
+  { label: 'E', midi: 40 },
+  { label: 'A', midi: 45 },
+  { label: 'D', midi: 50 },
+  { label: 'G', midi: 55 },
+  { label: 'B', midi: 59 },
+  { label: 'e', midi: 64 },
+];
+
+const INTERVALS = [
+  { semi: 0,  short: 'P1', name: 'Unison' },
+  { semi: 1,  short: 'm2', name: 'Minor 2nd' },
+  { semi: 2,  short: 'M2', name: 'Major 2nd' },
+  { semi: 3,  short: 'm3', name: 'Minor 3rd' },
+  { semi: 4,  short: 'M3', name: 'Major 3rd' },
+  { semi: 5,  short: 'P4', name: 'Perfect 4th' },
+  { semi: 6,  short: 'TT', name: 'Tritone' },
+  { semi: 7,  short: 'P5', name: 'Perfect 5th' },
+  { semi: 8,  short: 'm6', name: 'Minor 6th' },
+  { semi: 9,  short: 'M6', name: 'Major 6th' },
+  { semi: 10, short: 'm7', name: 'Minor 7th' },
+  { semi: 11, short: 'M7', name: 'Major 7th' },
+  { semi: 12, short: 'P8', name: 'Octave' },
+];
+
+const SCALES = {
+  major:      { name: 'Major scale',       steps: [0,2,4,5,7,9,11], degrees: ['1','2','3','4','5','6','7'] },
+  minor:      { name: 'Natural minor',     steps: [0,2,3,5,7,8,10], degrees: ['1','2','b3','4','5','b6','b7'] },
+  minorPent:  { name: 'Minor pentatonic',  steps: [0,3,5,7,10],     degrees: ['1','b3','4','5','b7'] },
+  majorPent:  { name: 'Major pentatonic',  steps: [0,2,4,7,9],      degrees: ['1','2','3','5','6'] },
+  blues:      { name: 'Blues scale',       steps: [0,3,5,6,7,10],   degrees: ['1','b3','4','b5','5','b7'] },
+  dorian:     { name: 'Dorian',            steps: [0,2,3,5,7,9,10], degrees: ['1','2','b3','4','5','6','b7'] },
+  mixolydian: { name: 'Mixolydian',        steps: [0,2,4,5,7,9,10], degrees: ['1','2','3','4','5','6','b7'] },
+};
+
+const CHORD_TYPES = {
+  maj:  { name: 'Major',      sym: '',     iv: [0,4,7] },
+  min:  { name: 'Minor',      sym: 'm',    iv: [0,3,7] },
+  dim:  { name: 'Diminished', sym: 'dim',  iv: [0,3,6] },
+  dom7: { name: 'Dominant 7', sym: '7',    iv: [0,4,7,10] },
+  maj7: { name: 'Major 7',    sym: 'maj7', iv: [0,4,7,11] },
+  m7:   { name: 'Minor 7',    sym: 'm7',   iv: [0,3,7,10] },
+};
+
+const mod12 = n => ((n % 12) + 12) % 12;
+
+function pcOf(name) {
+  const n = String(name).trim().replace('♯', '#').replace('♭', 'b');
+  const base = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 }[n[0].toUpperCase()];
+  if (base === undefined) return -1;
+  let acc = 0;
+  for (const c of n.slice(1)) { if (c === '#') acc++; else if (c === 'b') acc--; else return -1; }
+  return mod12(base + acc);
+}
+
+function noteName(pc, preferFlats = false) {
+  return (preferFlats ? FLATS : SHARPS)[mod12(pc)];
+}
+function bothNames(pc) {
+  const s = SHARPS[mod12(pc)], f = FLATS[mod12(pc)];
+  return s === f ? s : `${s}/${f}`;
+}
+function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+function fretPc(stringIdx, fret) { return mod12(STRINGS[stringIdx].midi + fret); }
+function fretMidi(stringIdx, fret) { return STRINGS[stringIdx].midi + fret; }
+
+function scalePcs(rootPc, scaleKey) {
+  return SCALES[scaleKey].steps.map(s => mod12(rootPc + s));
+}
+
+// Chord voicing for playback (guitar-like spread)
+function chordVoicing(rootPc, type) {
+  let r = 40 + mod12(rootPc - 4); // root between E2 and D#3
+  if (r < 43) r += 12;            // keep it from getting muddy
+  const iv = CHORD_TYPES[type].iv;
+  const third = iv[1], fifth = iv[2], seventh = iv[3];
+  const notes = [r, r + fifth, r + 12, r + 12 + third];
+  if (seventh !== undefined) notes.push(r + seventh + 12); else notes.push(r + 12 + fifth);
+  return notes;
+}
+
+function chordName(rootPc, type, flats) {
+  return noteName(rootPc, flats) + CHORD_TYPES[type].sym;
+}
+
+// Diatonic chords of a major key (triads)
+const MAJOR_KEY_CHORDS = [
+  { deg: 'I',    off: 0,  type: 'maj' },
+  { deg: 'ii',   off: 2,  type: 'min' },
+  { deg: 'iii',  off: 4,  type: 'min' },
+  { deg: 'IV',   off: 5,  type: 'maj' },
+  { deg: 'V',    off: 7,  type: 'maj' },
+  { deg: 'vi',   off: 9,  type: 'min' },
+  { deg: 'vii°', off: 11, type: 'dim' },
+];
+
+// Keys offered in the studio
+const KEYS = ['E','A','D','G','C','F','Bb','B','F#','C#','Eb','Ab'];
+
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+// ---------- Audio engine: guitar synth, drums, backing tracks, recorder ----------
+const AudioEngine = (() => {
+  let ctx = null, master, backingBus, sfxBus, noiseBuf;
+  const ksCache = new Map();
+
+  function setSession(type) {
+    try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) {}
+  }
+
+  function ensure() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      ctx = new AC({ latencyHint: 'interactive' });
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -14; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2;
+      master = ctx.createGain(); master.gain.value = 0.9;
+      master.connect(comp); comp.connect(ctx.destination);
+      backingBus = ctx.createGain(); backingBus.gain.value = 0.8; backingBus.connect(master);
+      sfxBus = ctx.createGain(); sfxBus.gain.value = 1; sfxBus.connect(master);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      if (!recorder.stream) setSession('playback');
+    }
+    if (ctx.state !== 'running') ctx.resume().catch(() => {});
+    return ctx;
+  }
+
+  // Karplus-Strong plucked string with fractional delay (accurate tuning)
+  function ksBuffer(midi, dur = 2.4, bright = 0.6) {
+    const key = midi + '|' + dur + '|' + bright;
+    if (ksCache.has(key)) return ksCache.get(key);
+    const sr = ctx.sampleRate, f = midiToFreq(midi);
+    const len = Math.floor(sr * dur);
+    const buf = ctx.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    const N = sr / f - 0.5;           // the 2-tap average adds ~0.5 sample of delay
+    const Ni = Math.floor(N), p = N - Ni;
+    const loss = Math.pow(0.001, 1 / (f * dur * 0.9));
+    let lp = 0;
+    for (let i = 0; i < Math.min(Ni + 2, len); i++) {
+      const w = Math.random() * 2 - 1;
+      lp += bright * (w - lp);
+      d[i] = lp;
+    }
+    // y[n] = loss * 0.5 * (x[n-D'] + x[n-D'-1]) with linear interpolation of the fractional delay
+    for (let i = Ni + 2; i < len; i++) {
+      d[i] = loss * 0.5 * ((1 - p) * d[i - Ni] + d[i - Ni - 1] + p * d[i - Ni - 2]);
+    }
+    // remove DC + fade tail
+    let mean = 0; for (let i = 0; i < len; i++) mean += d[i]; mean /= len;
+    const fade = Math.floor(sr * 0.06);
+    for (let i = 0; i < len; i++) {
+      d[i] -= mean;
+      if (i > len - fade) d[i] *= (len - i) / fade;
+    }
+    // normalise
+    let peak = 0; for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(d[i]));
+    if (peak > 0) for (let i = 0; i < len; i++) d[i] /= peak;
+    ksCache.set(key, buf);
+    return buf;
+  }
+
+  function pluck(midi, when, opts = {}) {
+    ensure();
+    const { dur = 2.4, gain = 0.4, bright = 0.6, dest = sfxBus, cut = null, tone = 4200 } = opts;
+    const src = ctx.createBufferSource();
+    src.buffer = ksBuffer(midi, dur, bright);
+    const g = ctx.createGain();
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = tone;
+    g.gain.setValueAtTime(gain, when);
+    if (cut) { g.gain.setValueAtTime(gain, when + cut); g.gain.exponentialRampToValueAtTime(0.0001, when + cut + 0.08); }
+    src.connect(lp); lp.connect(g); g.connect(dest);
+    src.start(when);
+    src.stop(when + (cut ? cut + 0.1 : dur));
+    return src;
+  }
+
+  function strum(midis, when, opts = {}) {
+    const spread = opts.spread ?? 0.018;
+    const n = midis.length;
+    midis.forEach((m, i) => pluck(m, when + i * spread, { ...opts, gain: (opts.gain ?? 0.25) * (1 - i * 0.04) / Math.sqrt(n / 3) }));
+  }
+
+  function now() { ensure(); return ctx.currentTime; }
+
+  // ---- drums ----
+  function kick(when, vol = 1, dest = backingBus) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(150, when);
+    o.frequency.exponentialRampToValueAtTime(42, when + 0.13);
+    g.gain.setValueAtTime(0.9 * vol, when);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.38);
+    o.connect(g); g.connect(dest); o.start(when); o.stop(when + 0.4);
+  }
+  function snare(when, vol = 1, dest = backingBus) {
+    const n = ctx.createBufferSource(); n.buffer = noiseBuf;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.7;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.55 * vol, when);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.2);
+    n.connect(bp); bp.connect(g); g.connect(dest); n.start(when); n.stop(when + 0.22);
+    const o = ctx.createOscillator(), og = ctx.createGain();
+    o.type = 'triangle'; o.frequency.value = 190;
+    og.gain.setValueAtTime(0.35 * vol, when); og.gain.exponentialRampToValueAtTime(0.001, when + 0.09);
+    o.connect(og); og.connect(dest); o.start(when); o.stop(when + 0.1);
+  }
+  function hat(when, vol = 1, open = false, dest = backingBus) {
+    const n = ctx.createBufferSource(); n.buffer = noiseBuf;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 7500;
+    const g = ctx.createGain();
+    const len = open ? 0.25 : 0.045;
+    g.gain.setValueAtTime(0.22 * vol, when);
+    g.gain.exponentialRampToValueAtTime(0.001, when + len);
+    n.connect(hp); hp.connect(g); g.connect(dest); n.start(when, Math.random() * 0.5); n.stop(when + len + 0.02);
+  }
+  function click(when, accent = false) {
+    ensure();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'square'; o.frequency.value = accent ? 2000 : 1400;
+    g.gain.setValueAtTime(accent ? 0.25 : 0.15, when);
+    g.gain.exponentialRampToValueAtTime(0.001, when + 0.03);
+    o.connect(g); g.connect(backingBus); o.start(when); o.stop(when + 0.04);
+  }
+  function bass(midi, when, len, vol = 1) {
+    pluck(midi, when, { dur: 1.6, gain: 0.55 * vol, bright: 0.35, dest: backingBus, cut: len, tone: 900 });
+  }
+
+  // ---- backing track styles ----
+  // prog: list of [semitoneOffsetFromKeyRoot, chordType] — one bar each
+  const STYLES = {
+    rock:   { name: 'Rock',          tonality: 'minor', feel: 'straight', bpm: 100, xp: 0,
+              prog: [[0,'min'],[8,'maj'],[3,'maj'],[10,'maj']], scales: ['minorPent','minor'], tone: 'Crunch / light overdrive' },
+    blues:  { name: 'Blues shuffle', tonality: 'blues', feel: 'shuffle',  bpm: 84,  xp: 0,
+              prog: [[0,'dom7'],[0,'dom7'],[0,'dom7'],[0,'dom7'],[5,'dom7'],[5,'dom7'],[0,'dom7'],[0,'dom7'],[7,'dom7'],[5,'dom7'],[0,'dom7'],[7,'dom7']],
+              scales: ['blues','minorPent','majorPent'], tone: 'Edge-of-breakup + spring reverb' },
+    metronome: { name: 'Metronome only', tonality: 'none', feel: 'straight', bpm: 80, xp: 0, prog: [[0,'maj']], scales: ['major','minorPent'], tone: 'Any' },
+    pop:    { name: 'Pop',           tonality: 'major', feel: 'straight', bpm: 110, xp: 120,
+              prog: [[0,'maj'],[9,'min'],[5,'maj'],[7,'maj']], scales: ['majorPent','major'], tone: 'Clean + chorus' },
+    funk:   { name: 'Funk vamp',     tonality: 'minor', feel: 'straight', bpm: 96,  xp: 250,
+              prog: [[0,'m7'],[0,'m7'],[5,'dom7'],[5,'dom7']], scales: ['dorian','minorPent'], tone: 'Clean, bright, a bit of compression' },
+    ballad: { name: 'Slow ballad',   tonality: 'major', feel: 'straight', bpm: 68,  xp: 400,
+              prog: [[0,'maj'],[7,'maj'],[9,'min'],[5,'maj']], scales: ['majorPent','major'], tone: 'Clean + delay + big reverb' },
+    soul:   { name: 'Soul groove',   tonality: 'major', feel: 'straight', bpm: 88,  xp: 600,
+              prog: [[0,'maj7'],[0,'maj7'],[5,'maj7'],[5,'maj7']], scales: ['major','majorPent'], tone: 'Warm clean, neck pickup' },
+  };
+
+  function bassMidi(pc) { let m = 28 + mod12(pc - 4); if (m > 38) m -= 12; return m; } // E1..D2
+
+  function playStep(style, s, bar, t, sd, chordRoot, chordType, nextRoot) {
+    const vox = chordVoicing(chordRoot, chordType);
+    const b = bassMidi(chordRoot);
+    const iv = CHORD_TYPES[chordType].iv;
+    switch (style) {
+      case 'metronome':
+        if (s % 4 === 0) click(t, s === 0);
+        break;
+      case 'rock':
+        if (s === 0 || s === 8 || s === 10) kick(t);
+        if (s === 4 || s === 12) snare(t);
+        if (s % 2 === 0) hat(t, s % 4 === 0 ? 0.9 : 0.6);
+        if (s % 2 === 0) bass(b, t, sd * 1.8, 0.9);
+        if (s === 0) strum(vox, t, { gain: 0.22, bright: 0.75, dest: backingBus, cut: sd * 7.5, tone: 3000 });
+        if (s === 8) strum(vox, t, { gain: 0.18, bright: 0.75, dest: backingBus, cut: sd * 5.5, tone: 3000 });
+        if (s === 14) strum(vox.slice(0, 3), t, { gain: 0.14, bright: 0.7, dest: backingBus, cut: sd * 1.5, tone: 3000 });
+        break;
+      case 'pop':
+        if (s === 0 || s === 6 || s === 8) kick(t);
+        if (s === 4 || s === 12) snare(t, 0.9);
+        if (s % 2 === 0) hat(t, 0.7);
+        if (s % 2 === 0) bass(b + (s === 6 || s === 14 ? 12 : 0), t, sd * 1.6, 0.85);
+        if (s === 0 || s === 6 || s === 10) strum(vox, t, { gain: 0.16, bright: 0.8, dest: backingBus, cut: sd * 3.5, tone: 5000 });
+        break;
+      case 'funk':
+        if (s === 0 || s === 7 || s === 10) kick(t);
+        if (s === 4 || s === 12) snare(t);
+        if (s === 14) snare(t, 0.25);
+        hat(t, s % 2 === 0 ? 0.6 : 0.35);
+        if ([0, 3, 6, 10, 11].includes(s)) bass(b + (s === 3 || s === 11 ? 12 : 0), t, sd * 0.9, 0.95);
+        if ([2, 6, 9, 13].includes(s)) strum(vox.slice(1), t, { gain: 0.15, bright: 0.9, dest: backingBus, cut: sd * 0.7, spread: 0.008, tone: 6000 });
+        break;
+      case 'ballad': {
+        if (s === 0 || s === 10) kick(t, 0.8);
+        if (s === 8) snare(t, 0.6);
+        if (s % 4 === 2) hat(t, 0.45);
+        if (s === 0) bass(b, t, sd * 7.5, 0.8);
+        if (s === 8) bass(b + iv[2], t, sd * 7.5, 0.7);
+        if (s % 2 === 0) {
+          const order = [0, 1, 2, 3, 4, 3, 2, 1];
+          const m = vox[order[(s / 2) % order.length] % vox.length];
+          pluck(m + 12, t, { gain: 0.16, bright: 0.55, dest: backingBus, dur: 2.0, tone: 3500 });
+        }
+        break;
+      }
+      case 'soul':
+        if (s === 0 || s === 9) kick(t, 0.85);
+        if (s === 4 || s === 12) snare(t, 0.55);
+        hat(t, s % 2 === 0 ? 0.4 : 0.2);
+        if (s === 0) bass(b, t, sd * 6, 0.85);
+        if (s === 7) bass(b + iv[2], t, sd * 2.5, 0.75);
+        if (s === 10) bass(b + 12, t, sd * 4, 0.75);
+        if (s === 0 || s === 8) strum(vox, t, { gain: 0.13, bright: 0.4, dest: backingBus, cut: sd * 7, spread: 0.03, tone: 2200 });
+        break;
+      case 'blues': {
+        // 12 steps per bar (triplet grid). Beats at 0,3,6,9; shuffle offbeat at +2
+        if (s === 0 || s === 6) kick(t);
+        if (s === 3 || s === 9) snare(t, 0.9);
+        if (s % 3 === 0 || s % 3 === 2) hat(t, s % 3 === 0 ? 0.7 : 0.45);
+        const walk = [0, 7, 9, 10];               // root, 5, 6, b7 boogie
+        if (s % 3 === 0) bass(b + walk[s / 3], t, sd * 1.8, 0.9);
+        if (s % 3 === 2) bass(b + walk[(s - 2) / 3], t, sd * 0.9, 0.6);
+        if (s === 0) strum(vox, t, { gain: 0.17, bright: 0.7, dest: backingBus, cut: sd * 2.5, tone: 3200 });
+        if (s === 5 || s === 11) strum(vox.slice(1, 4), t, { gain: 0.12, bright: 0.7, dest: backingBus, cut: sd * 0.8, tone: 3200 });
+        break;
+      }
+    }
+  }
+
+  const backing = { playing: false, timer: null };
+
+  function startBacking(cfg, cb = {}) {
+    ensure();
+    stopBacking();
+    const st = STYLES[cfg.style];
+    const stepsPerBar = st.feel === 'shuffle' ? 12 : 16;
+    const sd = (60 / cfg.bpm) * 4 / stepsPerBar;
+    const keyPc = pcOf(cfg.key);
+    let step = 0, bar = 0;
+    let next = ctx.currentTime + 0.12;
+    backing.playing = true;
+    backing.cfg = cfg;
+    const tick = () => {
+      while (next < ctx.currentTime + 0.18) {
+        const p = st.prog[bar % st.prog.length];
+        const np = st.prog[(bar + 1) % st.prog.length];
+        const root = mod12(keyPc + p[0]);
+        playStep(cfg.style, step, bar, next, sd, root, p[1], mod12(keyPc + np[0]));
+        const delay = Math.max(0, (next - ctx.currentTime) * 1000);
+        if (step === 0 && cb.onBar) { const b = bar; setTimeout(() => backing.playing && cb.onBar(b, root, p[1], np), delay); }
+        if (cb.onBeat && step % (stepsPerBar / 4) === 0) { const beat = step / (stepsPerBar / 4); setTimeout(() => backing.playing && cb.onBeat(beat), delay); }
+        next += sd;
+        step++;
+        if (step >= stepsPerBar) { step = 0; bar++; }
+      }
+    };
+    tick();
+    backing.timer = setInterval(tick, 25);
+  }
+  function stopBacking() {
+    backing.playing = false;
+    if (backing.timer) clearInterval(backing.timer);
+    backing.timer = null;
+  }
+  function setBackingVolume(v) { ensure(); backingBus.gain.value = v; }
+
+  // ---- recorder ----
+  const recorder = { stream: null, src: null, inGain: null, analyser: null, mr: null, chunks: [], startedAt: 0, recDest: null, toRec: null, monitor: null };
+
+  function pickMime() {
+    if (!window.MediaRecorder) return '';
+    const opts = ['audio/mp4', 'audio/mp4;codecs=mp4a.40.2', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+    for (const m of opts) { try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) {} }
+    return '';
+  }
+
+  async function openInput(deviceId) {
+    ensure();
+    if (recorder.stream) return true;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('This browser cannot record audio here. Open the app from your home screen (HTTPS).');
+    setSession('play-and-record');
+    const audio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+    if (deviceId) audio.deviceId = { exact: deviceId };
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio }); }
+    catch (e) {
+      if (deviceId) { delete audio.deviceId; stream = await navigator.mediaDevices.getUserMedia({ audio }); }
+      else { setSession('playback'); throw e; }
+    }
+    recorder.stream = stream;
+    recorder.src = ctx.createMediaStreamSource(stream);
+    recorder.inGain = ctx.createGain();
+    recorder.inGain.gain.value = 1;
+    recorder.analyser = ctx.createAnalyser(); recorder.analyser.fftSize = 1024;
+    recorder.src.connect(recorder.inGain); recorder.inGain.connect(recorder.analyser);
+    if (ctx.state !== 'running') await ctx.resume();
+    return true;
+  }
+  function setMonitor(on) {
+    if (!recorder.inGain) return;
+    if (on && !recorder.monitor) { recorder.monitor = ctx.createGain(); recorder.monitor.gain.value = 1; recorder.inGain.connect(recorder.monitor); recorder.monitor.connect(master); }
+    if (!on && recorder.monitor) { try { recorder.inGain.disconnect(recorder.monitor); recorder.monitor.disconnect(); } catch (e) {} recorder.monitor = null; }
+  }
+  function setInputGain(v) { if (recorder.inGain) recorder.inGain.gain.value = v; }
+  function level() {
+    if (!recorder.analyser) return 0;
+    const a = new Float32Array(recorder.analyser.fftSize);
+    recorder.analyser.getFloatTimeDomainData(a);
+    let pk = 0; for (const x of a) pk = Math.max(pk, Math.abs(x));
+    return pk;
+  }
+  function closeInput() {
+    if (recorder.mr && recorder.mr.state !== 'inactive') { try { recorder.mr.stop(); } catch (e) {} }
+    setMonitor(false);
+    if (recorder.stream) recorder.stream.getTracks().forEach(t => t.stop());
+    try { recorder.src && recorder.src.disconnect(); } catch (e) {}
+    recorder.stream = recorder.src = recorder.inGain = recorder.analyser = null;
+    setSession('playback');
+  }
+
+  function startRecording({ includeBacking = true, backingLevel = 0.6 } = {}) {
+    if (!recorder.stream) throw new Error('Input not open');
+    const mime = pickMime();
+    let streamToRecord = null;
+    try {
+      recorder.recDest = ctx.createMediaStreamDestination();
+      recorder.inGain.connect(recorder.recDest);
+      if (includeBacking) {
+        recorder.toRec = ctx.createGain(); recorder.toRec.gain.value = backingLevel;
+        backingBus.connect(recorder.toRec); recorder.toRec.connect(recorder.recDest);
+      }
+      streamToRecord = recorder.recDest.stream;
+    } catch (e) { streamToRecord = recorder.stream; }
+    let mr;
+    try { mr = mime ? new MediaRecorder(streamToRecord, { mimeType: mime }) : new MediaRecorder(streamToRecord); }
+    catch (e) { mr = new MediaRecorder(recorder.stream); }
+    recorder.chunks = [];
+    mr.ondataavailable = e => { if (e.data && e.data.size) recorder.chunks.push(e.data); };
+    mr.start(500);
+    recorder.mr = mr;
+    recorder.startedAt = performance.now();
+  }
+  function stopRecording() {
+    return new Promise(resolve => {
+      const mr = recorder.mr;
+      if (!mr) return resolve(null);
+      const duration = (performance.now() - recorder.startedAt) / 1000;
+      mr.onstop = () => {
+        const type = mr.mimeType || (recorder.chunks[0] && recorder.chunks[0].type) || 'audio/mp4';
+        const blob = new Blob(recorder.chunks, { type });
+        try { recorder.recDest && recorder.inGain && recorder.inGain.disconnect(recorder.recDest); } catch (e) {}
+        try { if (recorder.toRec) { backingBus.disconnect(recorder.toRec); recorder.toRec.disconnect(); } } catch (e) {}
+        recorder.toRec = null; recorder.recDest = null; recorder.mr = null;
+        resolve({ blob, mime: type, duration });
+      };
+      try { mr.stop(); } catch (e) { resolve(null); }
+    });
+  }
+  function isRecording() { return !!(recorder.mr && recorder.mr.state === 'recording'); }
+  function elapsed() { return isRecording() ? (performance.now() - recorder.startedAt) / 1000 : 0; }
+
+  async function listInputs() {
+    try {
+      const devs = await navigator.mediaDevices.enumerateDevices();
+      return devs.filter(d => d.kind === 'audioinput');
+    } catch (e) { return []; }
+  }
+
+  return {
+    ensure, now, pluck, strum, click, STYLES,
+    startBacking, stopBacking, setBackingVolume, get backingPlaying() { return backing.playing; },
+    openInput, closeInput, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
+    get inputOpen() { return !!recorder.stream; },
+  };
+})();
+
+// ---------- Course content ----------
+// Fretboard mark helper: all positions of given pitch classes inside a fret window
+function marksFor(pcs, rootPc, from, to, strings = [0,1,2,3,4,5], labeler) {
+  const out = [];
+  for (const s of strings) for (let f = from; f <= to; f++) {
+    const pc = fretPc(s, f);
+    if (pcs.includes(pc)) out.push({ s, f, label: labeler ? labeler(pc) : noteName(pc), root: pc === rootPc });
+  }
+  return out;
+}
+function scaleMarks(key, scaleKey, from, to, strings, useDegrees = false) {
+  const r = pcOf(key), pcs = scalePcs(r, scaleKey), sc = SCALES[scaleKey];
+  return marksFor(pcs, r, from, to, strings, pc => useDegrees ? sc.degrees[pcs.indexOf(pc)] : noteName(pc, FLAT_KEYS.has(key)));
+}
+
+const CHAPTERS = [
+  {
+    id: 'c1', title: 'The Fretboard', icon: '🎸',
+    blurb: 'Know where every note lives. Everything else is built on this.',
+    lessons: [
+      {
+        id: 'l1-1', title: 'The musical alphabet',
+        cards: [
+          { h: 'Only 7 letters', p: 'Music uses the letters <b>A B C D E F G</b>, then starts again at A. Between most letters there is an extra note, called a <b>sharp (#)</b> or a <b>flat (b)</b>.' },
+          { h: '12 notes in total', p: 'A, A#, B, C, C#, D, D#, E, F, F#, G, G#, then A again. That’s it: every song you have ever played uses only these 12 notes.' },
+          { h: 'The two exceptions', p: 'There is <b>no note between B and C</b>, and <b>none between E and F</b>. Remember “<b>BC</b> and <b>EF</b>”. This is the most important rule of the fretboard.' },
+          { h: 'Sharp or flat?', p: 'A# and Bb are the <b>same note</b> with two names. Which name you use depends on the key, but your finger goes to the same fret.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q1-1a', q: 'Which note comes right after E (one fret higher)?', o: ['E#', 'F', 'F#', 'G'], a: 1, ex: 'There is no note between E and F.' },
+          { t: 'mc', id: 'q1-1b', q: 'How many different notes are there in Western music?', o: ['7', '8', '12', '24'], a: 2, ex: '7 letters + 5 sharps/flats = 12.' },
+          { t: 'mc', id: 'q1-1c', q: 'A# is the same note as…', o: ['Ab', 'Bb', 'B', 'C'], a: 1, ex: 'One fret above A = one fret below B.' },
+          { t: 'mc', id: 'q1-1d', q: 'Which note comes right after B?', o: ['B#', 'Cb', 'C', 'C#'], a: 2, ex: 'B → C, no note in between.' },
+        ],
+        practice: { type: 'game', game: 'nameNote', strings: [0], from: 0, to: 12, title: 'Name the note (low E string)', how: 'A dot appears on the low E string. Name it as fast as you can. Count up the alphabet from the open string, remembering BC and EF.' },
+        jam: { prompt: 'Warm-up jam. Play anything you like over the groove, but say the name of each note you land on out loud.', style: 'rock', key: 'A', scale: 'minorPent', tone: 'Crunch' },
+      },
+      {
+        id: 'l1-2', title: 'Strings and frets',
+        cards: [
+          { h: 'Open strings', p: 'From the thickest to the thinnest: <b>E A D G B E</b>. Memory trick: “<b>E</b>ddie <b>A</b>te <b>D</b>ynamite, <b>G</b>ood <b>B</b>ye <b>E</b>ddie”.', fb: { from: 0, to: 4, marks: () => [0,1,2,3,4,5].map(s => ({ s, f: 0, label: STRINGS[s].label.toUpperCase(), root: s === 0 || s === 5 })) } },
+          { h: 'One fret = one half step', p: 'Each fret raises the note by the smallest step, a <b>half step</b>. Two frets = a <b>whole step</b>.' },
+          { h: 'The 12th fret', p: 'After 12 frets (12 half steps) you are back to the same note, one <b>octave</b> higher. That’s why the 12th fret has the double dot: the fretboard repeats from there.' },
+          { h: 'Strings are a 5th of 5 frets apart', p: 'The 5th fret of a string gives the next open string (E string, 5th fret = A). The exception is the G string: its <b>4th</b> fret gives B. That’s how you tune by ear, and it’s why shapes shift by one fret when they cross from G to B.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q1-2a', q: 'What note is on the 5th fret of the low E string?', o: ['G', 'A', 'B', 'C'], a: 1, ex: 'E F F# G G# A: 5 half steps → A. Same as the next open string.' },
+          { t: 'mc', id: 'q1-2b', q: 'What note is on the 12th fret of the G string?', o: ['F#', 'G', 'A', 'B'], a: 1, ex: '12th fret = octave of the open string.' },
+          { t: 'mc', id: 'q1-2c', q: 'Which fret of the G string gives the same note as the open B string?', o: ['3rd', '4th', '5th', '7th'], a: 1, ex: 'G to B is only 4 half steps: the one exception in standard tuning.' },
+          { t: 'find', id: 'q1-2d', q: 'Tap the open strings that are tuned to E.', pc: 4, strings: [0,1,2,3,4,5], from: 0, to: 0, need: 'all', ex: 'Both E strings: the 6th and the 1st.' },
+        ],
+        practice: { type: 'game', game: 'nameNote', strings: [0, 1], from: 0, to: 12, title: 'Name the note (E and A strings)', how: 'Use the 5th and 12th frets as landmarks. From a landmark, count up or down.' },
+        jam: { prompt: 'Play a solo where every phrase ends on the note A. Find at least three different A’s on the neck.', style: 'rock', key: 'A', scale: 'minorPent', tone: 'Crunch' },
+      },
+      {
+        id: 'l1-3', title: 'Notes on the E and A strings',
+        cards: [
+          { h: 'Why these two strings?', p: 'The roots of barre chords, power chords and most scale shapes sit on the <b>low E</b> and <b>A</b> strings. Know these and you can find any key instantly.' },
+          { h: 'Low E landmarks', p: 'G = 3rd fret, A = 5th, B = 7th, C = 8th, D = 10th, E = 12th.', fb: { from: 0, to: 12, marks: () => marksFor([7,9,11,0,2,4], -1, 1, 12, [0]) } },
+          { h: 'A string landmarks', p: 'B = 2nd fret, C = 3rd, D = 5th, E = 7th, F = 8th, G = 10th, A = 12th.', fb: { from: 0, to: 12, marks: () => marksFor([11,0,2,4,5,7,9], -1, 1, 12, [1]) } },
+          { h: 'The same frets, different strings', p: 'Notice: the 3rd fret is G on the E string and C on the A string. A power chord with the root on the E string at fret 3 is G5; move it to the A string and it’s C5.' },
+        ],
+        quiz: [
+          { t: 'find', id: 'q1-3a', q: 'Tap every C on the low E string (frets 0–12).', pc: 0, strings: [0], from: 0, to: 12, need: 'all', ex: 'Only the 8th fret.' },
+          { t: 'find', id: 'q1-3b', q: 'Tap every D on the A string (frets 0–12).', pc: 2, strings: [1], from: 0, to: 12, need: 'all', ex: 'D is the 5th fret of the A string.' },
+          { t: 'mc', id: 'q1-3c', q: 'You play a barre chord shaped like E major with the root at the 7th fret of the low E. Which chord is it?', o: ['A', 'B', 'C', 'D'], a: 1, ex: '7th fret of the low E = B.' },
+          { t: 'find', id: 'q1-3d', q: 'Tap every G on the E and A strings.', pc: 7, strings: [0, 1], from: 0, to: 12, need: 'all', ex: 'E string fret 3, A string fret 10.' },
+        ],
+        practice: { type: 'game', game: 'findNote', strings: [0, 1], from: 0, to: 12, title: 'Find the note (30 s)', how: 'A note name appears. Tap every place it lives on the E and A strings. Go for speed.' },
+        jam: { prompt: 'Change position with the chords: for each chord, play your phrase starting from that chord’s root on the E or A string.', style: 'rock', key: 'E', scale: 'minorPent', tone: 'Crunch' },
+      },
+      {
+        id: 'l1-4', title: 'Octave shapes',
+        cards: [
+          { h: 'Find any note everywhere', p: 'An <b>octave shape</b> takes you from one note to the same note higher up. With two shapes you can find a note on every string.' },
+          { h: 'E → D and A → G: “two strings, two frets”', p: 'From a note on the E or A string, skip one string and go <b>2 frets up</b>.', fb: { from: 3, to: 9, marks: () => [{ s: 0, f: 5, label: 'A', root: true }, { s: 2, f: 7, label: 'A' }, { s: 1, f: 3, label: 'C', root: true }, { s: 3, f: 5, label: 'C' }] } },
+          { h: 'D → B and G → e: “two strings, three frets”', p: 'When the jump crosses the G–B pair, it is <b>3 frets up</b> instead (because of the G–B exception).', fb: { from: 3, to: 10, marks: () => [{ s: 2, f: 5, label: 'G', root: true }, { s: 4, f: 8, label: 'G' }, { s: 3, f: 4, label: 'B', root: true }, { s: 5, f: 7, label: 'B' }] } },
+          { h: 'Same fret, two strings apart', p: 'The low E and high e strings are both E: a note on the low E is the same note at the same fret on the high e, two octaves up.' },
+        ],
+        quiz: [
+          { t: 'find', id: 'q1-4a', q: 'A is on the 5th fret of the low E. Tap the A one octave higher on the D string.', pc: 9, strings: [2], from: 5, to: 9, need: 'one', shown: [{ s: 0, f: 5, label: 'A', root: true }], ex: 'Two strings over, two frets up: D string, 7th fret.' },
+          { t: 'find', id: 'q1-4b', q: 'C is on the 3rd fret of the A string. Tap its octave on the G string.', pc: 0, strings: [3], from: 3, to: 7, need: 'one', shown: [{ s: 1, f: 3, label: 'C', root: true }], ex: 'G string, 5th fret.' },
+          { t: 'find', id: 'q1-4c', q: 'G is on the 5th fret of the D string. Tap its octave on the B string.', pc: 7, strings: [4], from: 5, to: 10, need: 'one', shown: [{ s: 2, f: 5, label: 'G', root: true }], ex: 'Crossing G–B: 3 frets up → B string, 8th fret.' },
+          { t: 'mc', id: 'q1-4d', q: 'The note at the 8th fret of the low E is C. What is at the 8th fret of the high e?', o: ['A', 'B', 'C', 'G'], a: 2, ex: 'Both E strings carry the same notes, two octaves apart.' },
+        ],
+        practice: { type: 'game', game: 'findNote', strings: [0,1,2,3,4,5], from: 0, to: 12, title: 'Find the note on all strings (30 s)', how: 'Use your octave shapes: find it on the E or A string first, then jump.' },
+        jam: { prompt: 'Pick ONE phrase you like. Play it, then play the same phrase one octave higher using an octave shape.', style: 'blues', key: 'A', scale: 'minorPent', tone: 'Edge-of-breakup' },
+      },
+    ],
+  },
+  {
+    id: 'c2', title: 'Intervals', icon: '📏',
+    blurb: 'The distance between two notes. The real secret behind scales, chords and melodies.',
+    lessons: [
+      {
+        id: 'l2-1', title: 'Half steps and whole steps',
+        cards: [
+          { h: 'The two building blocks', p: 'A <b>half step</b> (H) = 1 fret. A <b>whole step</b> (W) = 2 frets. Every scale is just a pattern of W and H.' },
+          { h: 'Natural half steps', p: 'Remember BC and EF: between those letters is a half step. Between all other neighbouring letters (C–D, D–E, F–G, G–A, A–B) is a whole step.' },
+          { h: 'On one string', p: 'Playing up one string you <i>see</i> the distances: C (fret 8 low E) → D is 2 frets → E is 2 frets → F is just 1 fret.', fb: { from: 7, to: 14, marks: () => marksFor([0,2,4,5], 0, 7, 14, [0]) } },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q2-1a', q: 'From E to F is a…', o: ['Half step', 'Whole step', 'Step and a half', 'Octave'], a: 0, ex: 'EF: no note between → half step.' },
+          { t: 'mc', id: 'q2-1b', q: 'From G to A is a…', o: ['Half step', 'Whole step', 'Step and a half', 'Octave'], a: 1, ex: 'G# sits between them → 2 frets.' },
+          { t: 'mc', id: 'q2-1c', q: 'A whole step above B is…', o: ['C', 'C#', 'D', 'Bb'], a: 1, ex: 'B→C is a half step, C→C# another one.' },
+        ],
+        practice: { type: 'drill', title: 'Chromatic warm-up', how: 'Starting on the low E, play frets 1-2-3-4 with one finger per fret on each string, up to the high e and back. Keep every note clean and even. Raise the tempo only when it’s clean.', bpm: 70, fb: { from: 1, to: 4, marks: () => { const m = []; for (let s = 0; s < 6; s++) for (let f = 1; f <= 4; f++) m.push({ s, f, label: String(f) }); return m; } } },
+        jam: { prompt: 'Slide into every target note from one fret below (a half step). Hear how the half-step slide creates tension then release.', style: 'blues', key: 'E', scale: 'minorPent', tone: 'Edge-of-breakup' },
+      },
+      {
+        id: 'l2-2', title: 'Naming intervals',
+        cards: [
+          { h: 'Count the half steps', p: 'An interval is named by how far apart two notes are. Count frets from the first note to the second.' },
+          { h: 'The list', p: '1 = minor 2nd · 2 = major 2nd · 3 = <b>minor 3rd</b> · 4 = <b>major 3rd</b> · 5 = <b>perfect 4th</b> · 6 = tritone · 7 = <b>perfect 5th</b> · 8 = minor 6th · 9 = major 6th · 10 = <b>minor 7th</b> · 11 = major 7th · 12 = octave.' },
+          { h: 'The ones that matter most', p: 'For soloing and chords, start with: <b>minor 3rd</b> (sad), <b>major 3rd</b> (happy), <b>perfect 5th</b> (strong, the power chord), <b>minor 7th</b> (bluesy). The others will follow.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q2-2a', q: 'How many frets is a perfect 5th?', o: ['5', '6', '7', '8'], a: 2, ex: 'Perfect 5th = 7 half steps.' },
+          { t: 'mc', id: 'q2-2b', q: 'From A to C is…', o: ['Minor 3rd', 'Major 3rd', 'Perfect 4th', 'Major 2nd'], a: 0, ex: 'A A# B C: 3 half steps.' },
+          { t: 'mc', id: 'q2-2c', q: 'From C to E is…', o: ['Minor 3rd', 'Major 3rd', 'Perfect 4th', 'Perfect 5th'], a: 1, ex: 'C C# D D# E: 4 half steps.' },
+          { t: 'mc', id: 'q2-2d', q: 'A power chord (like E5) is made of the root and the…', o: ['Major 3rd', 'Perfect 4th', 'Perfect 5th', 'Octave only'], a: 2, ex: 'That’s why it is called a “5” chord.' },
+        ],
+        practice: { type: 'game', game: 'interval', title: 'Interval hunt', how: 'A root note is shown. Tap the interval asked for. Any string works, look near the root.', set: [3, 4, 7, 12] },
+        jam: { prompt: 'Two-note phrases only: play a note, then jump a 3rd or a 5th. Make it sing.', style: 'rock', key: 'A', scale: 'minorPent', tone: 'Crunch' },
+      },
+      {
+        id: 'l2-3', title: 'Interval shapes',
+        cards: [
+          { h: 'Shapes, not counting', p: 'On guitar every interval has a <b>shape</b> across two neighbouring strings. Learn the shapes and you’ll stop counting frets.' },
+          { h: 'From a root to the next string', p: '<b>Same fret</b> = perfect 4th · <b>2 frets up</b> = perfect 5th · <b>1 fret back</b> = major 3rd · <b>2 frets back</b> = minor 3rd.', fb: { from: 3, to: 8, marks: () => [{ s: 0, f: 5, label: 'R', root: true }, { s: 1, f: 5, label: '4' }, { s: 1, f: 7, label: '5' }, { s: 1, f: 4, label: '3' }, { s: 1, f: 3, label: 'b3' }] } },
+          { h: 'The G–B shift', p: 'When the second note is on the B string (from the G string), move everything <b>one fret up</b>. Example: a 5th from the G string is 3 frets up on the B string.' },
+        ],
+        quiz: [
+          { t: 'find', id: 'q2-3a', q: 'Root is A (low E, fret 5). Tap the perfect 5th on the A string.', pc: 4, strings: [1], from: 3, to: 9, need: 'one', shown: [{ s: 0, f: 5, label: 'A', root: true }], ex: 'Next string, two frets up: A string fret 7 = E.' },
+          { t: 'find', id: 'q2-3b', q: 'Root is C (A string, fret 3). Tap the major 3rd on the D string.', pc: 4, strings: [2], from: 0, to: 6, need: 'one', shown: [{ s: 1, f: 3, label: 'C', root: true }], ex: 'Next string, one fret back: D string fret 2 = E.' },
+          { t: 'find', id: 'q2-3c', q: 'Root is D (A string, fret 5). Tap the minor 3rd on the D string.', pc: 5, strings: [2], from: 1, to: 7, need: 'one', shown: [{ s: 1, f: 5, label: 'D', root: true }], ex: 'Two frets back: D string fret 3 = F.' },
+        ],
+        practice: { type: 'game', game: 'interval', title: 'Interval shapes', how: 'Use the shapes, not counting. Same fret = 4th, +2 = 5th, −1 = major 3rd, −2 = minor 3rd.', set: [3, 4, 5, 7] },
+        jam: { prompt: 'Use 3rds: over each chord, play phrases that move in 3rds (skip one scale note at a time).', style: 'pop', key: 'G', scale: 'majorPent', tone: 'Clean + chorus' },
+      },
+      {
+        id: 'l2-4', title: 'How intervals feel',
+        cards: [
+          { h: 'Intervals have emotions', p: '<b>Minor 3rd</b>: dark, sad. <b>Major 3rd</b>: bright, happy. <b>Perfect 5th</b>: solid, open. <b>Minor 7th</b>: bluesy, unresolved. <b>Tritone</b>: tense, “wrong” in a cool way.' },
+          { h: 'Train your ear', p: 'Link each interval to a song start you know. Major 6th: “My Bonnie”. Perfect 4th: “Here Comes the Bride”. Perfect 5th: “Star Wars”. Use the <b>Ear</b> tab to practise.' },
+          { h: 'Why it matters for solos', p: 'When you can <b>hear</b> the interval you want before playing it, your solos stop being finger patterns and start being melodies. That’s fluidity.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q2-4a', q: 'Which interval mostly makes a chord sound major or minor?', o: ['The 2nd', 'The 3rd', 'The 5th', 'The octave'], a: 1, ex: 'Major 3rd = major, minor 3rd = minor.' },
+          { t: 'mc', id: 'q2-4b', q: 'Which interval gives the “bluesy, unresolved” feel?', o: ['Major 3rd', 'Perfect 5th', 'Minor 7th', 'Octave'], a: 2, ex: 'The b7 is everywhere in blues.' },
+        ],
+        practice: { type: 'game', game: 'interval', title: 'All main intervals', how: 'Mix of 3rds, 4ths, 5ths, 7ths and octaves. Sing the interval before you tap it.', set: [3, 4, 5, 7, 10, 12] },
+        jam: { prompt: 'Make every long note a minor 7th (b7) or a 5th above the chord root. Feel the difference.', style: 'blues', key: 'A', scale: 'blues', tone: 'Edge-of-breakup' },
+      },
+    ],
+  },
+  {
+    id: 'c3', title: 'The Major Scale', icon: '🪜',
+    blurb: 'The mother of all scales. Every chord and mode comes from it.',
+    lessons: [
+      {
+        id: 'l3-1', title: 'The formula: W W H W W W H',
+        cards: [
+          { h: 'One pattern, every key', p: 'Every major scale follows the same steps: <b>Whole, Whole, Half, Whole, Whole, Whole, Half</b>.' },
+          { h: 'C major: the easy one', p: 'C D E F G A B C. No sharps or flats: the half steps fall exactly on E–F and B–C.' },
+          { h: 'G major', p: 'G A B C D E <b>F#</b> G. To keep the formula, F must be raised to F#.', fb: { from: 2, to: 5, marks: () => scaleMarks('G', 'major', 2, 5, [0,1,2]) } },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q3-1a', q: 'Which note is sharp in G major?', o: ['C#', 'F#', 'G#', 'D#'], a: 1, ex: 'E→F would be a half step; the formula needs a whole step, so F#.' },
+          { t: 'mc', id: 'q3-1b', q: 'The major scale formula is…', o: ['W H W W H W W', 'W W H W W W H', 'H W W W H W W', 'W W W H W W H'], a: 1, ex: 'W W H W W W H.' },
+          { t: 'mc', id: 'q3-1c', q: 'What is the 3rd note of D major?', o: ['F', 'F#', 'G', 'E'], a: 1, ex: 'D (W) E (W) F#.' },
+        ],
+        practice: { type: 'drill', title: 'G major on three strings', how: 'Play G major up and down: E string frets 3-5-7, A string 3-5-7, D string 4-5. Say the note names as you play.', bpm: 70, fb: { from: 2, to: 8, marks: () => scaleMarks('G', 'major', 3, 7, [0, 1]).concat(scaleMarks('G', 'major', 4, 5, [2])) } },
+        jam: { prompt: 'Melody time: use only the G major scale and try to play a simple melody you could sing.', style: 'pop', key: 'G', scale: 'major', tone: 'Clean + chorus' },
+      },
+      {
+        id: 'l3-2', title: 'Scale degrees',
+        cards: [
+          { h: 'Numbers instead of letters', p: 'We number the notes of a scale 1 to 7. In C major: C=1, D=2, E=3, F=4, G=5, A=6, B=7. Numbers work in <b>every key</b>.' },
+          { h: 'Why numbers rock', p: '“Land on the 3” or “a I–IV–V” means the same thing in any key. Musicians talk in numbers so they can transpose instantly.' },
+          { h: 'Strong notes', p: 'The <b>1, 3 and 5</b> are the most stable notes (they form the chord). The 4 and 7 want to move: 7 pulls up to 1, 4 pulls down to 3.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q3-2a', q: 'In A major (A B C# D E F# G#), which note is the 5?', o: ['D', 'E', 'F#', 'C#'], a: 1, ex: 'A=1 B=2 C#=3 D=4 E=5.' },
+          { t: 'mc', id: 'q3-2b', q: 'Which degree “pulls” strongly up to the root?', o: ['2', '4', '6', '7'], a: 3, ex: 'The 7 is a half step below the 1: it wants to resolve.' },
+          { t: 'mc', id: 'q3-2c', q: 'In G major, which note is the 3?', o: ['A', 'B', 'C', 'D'], a: 1, ex: 'G=1 A=2 B=3.' },
+        ],
+        practice: { type: 'drill', title: 'Degrees on the neck', how: 'Play the G major shape slowly and say the degree (1, 2, 3…) instead of the note name. Then play only 1-3-5 and hear the chord appear.', bpm: 60, fb: { from: 2, to: 8, marks: () => scaleMarks('G', 'major', 3, 7, [0, 1], true).concat(scaleMarks('G', 'major', 4, 5, [2], true)) } },
+        jam: { prompt: 'Tension and release: hold the 7 (F#) for a moment, then resolve it to the 1 (G). Do it again with 4 → 3.', style: 'ballad', key: 'G', scale: 'major', tone: 'Clean + delay' },
+      },
+      {
+        id: 'l3-3', title: 'Major scale across the neck',
+        cards: [
+          { h: 'A full position', p: 'Here is G major in one position (frets 2 to 5). Roots in gold. Play it from the lowest root to the highest and back.', fb: { from: 1, to: 6, marks: () => scaleMarks('G', 'major', 2, 5) } },
+          { h: 'Movable', p: 'This shape has no open strings, so it’s <b>movable</b>: slide it up 2 frets and you have A major. The root on the E string tells you the key.' },
+          { h: 'Don’t get stuck in boxes', p: 'Shapes are maps, not cages. Use them to know where the notes are, then make melodies with them.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q3-3a', q: 'You move the G major shape so its root is on the 5th fret of the low E. Which key are you in?', o: ['G major', 'A major', 'C major', 'D major'], a: 1, ex: 'Low E fret 5 = A.' },
+          { t: 'find', id: 'q3-3b', q: 'In this G major position, tap all the G notes (roots) between frets 2 and 5.', pc: 7, strings: [0,1,2,3,4,5], from: 2, to: 5, need: 'all', ex: 'Low E 3, D 5, high e 3. (The open G string is outside the position.)' },
+        ],
+        practice: { type: 'drill', title: 'G major position', how: 'Play the whole position up and down in 8th notes. One finger per fret: index on fret 2, pinky on fret 5.', bpm: 70, fb: { from: 1, to: 6, marks: () => scaleMarks('G', 'major', 2, 5) } },
+        jam: { prompt: 'Stay in the G major position and make up a melody you could sing. Use space, not just notes.', style: 'pop', key: 'G', scale: 'major', tone: 'Clean + chorus' },
+      },
+      {
+        id: 'l3-4', title: 'The relative minor',
+        cards: [
+          { h: 'Same notes, different home', p: 'Start the C major scale on its 6th note and you get <b>A minor</b>: A B C D E F G. Same notes, but A feels like home, and it sounds sad.' },
+          { h: 'Find it fast', p: 'The relative minor is <b>3 frets below</b> the major root. G major → E minor. C major → A minor. D major → B minor.' },
+          { h: 'Why it matters', p: 'A solo in A minor can use the C major shapes. Learn one shape, get two keys.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q3-4a', q: 'What is the relative minor of G major?', o: ['A minor', 'D minor', 'E minor', 'B minor'], a: 2, ex: 'G minus 3 half steps = E.' },
+          { t: 'mc', id: 'q3-4b', q: 'What is the relative major of A minor?', o: ['C major', 'D major', 'E major', 'G major'], a: 0, ex: 'A plus 3 half steps = C.' },
+          { t: 'mc', id: 'q3-4c', q: 'C major and A minor…', o: ['Share no notes', 'Share all their notes', 'Share 5 notes', 'Share only the root'], a: 1, ex: 'Same 7 notes, different starting point.' },
+        ],
+        practice: { type: 'drill', title: 'E minor from the G shape', how: 'Play the G major position again, but start and end on the E notes. Hear how the mood becomes darker.', bpm: 70, fb: { from: 1, to: 6, marks: () => marksFor(scalePcs(7, 'major'), 4, 2, 5) } },
+        jam: { prompt: 'Minor mood: solo in A minor using the C major notes. Land on A at the end of each phrase.', style: 'rock', key: 'A', scale: 'minor', tone: 'Crunch' },
+      },
+    ],
+  },
+  {
+    id: 'c4', title: 'Building Chords', icon: '🧱',
+    blurb: 'Finally understand the chords you already know by heart.',
+    lessons: [
+      {
+        id: 'l4-1', title: 'Triads: 1 – 3 – 5',
+        cards: [
+          { h: 'Stacking 3rds', p: 'A basic chord (a <b>triad</b>) takes the 1st, 3rd and 5th notes of a scale. C major scale → <b>C E G</b> = C major chord.' },
+          { h: 'Your open chords are triads', p: 'An open C chord (x32010) plays C E G C E: just the three notes, doubled.', fb: { from: 0, to: 4, marks: () => [{ s: 1, f: 3, label: 'C', root: true }, { s: 2, f: 2, label: 'E' }, { s: 3, f: 0, label: 'G' }, { s: 4, f: 1, label: 'C', root: true }, { s: 5, f: 0, label: 'E' }] } },
+          { h: 'Any order works', p: 'As long as the notes are 1, 3 and 5, it’s the same chord. That’s why so many shapes give the same chord.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q4-1a', q: 'Which notes make a G major chord?', o: ['G B D', 'G A B', 'G C D', 'G Bb D'], a: 0, ex: 'G major scale: G(1) A B(3) C D(5).' },
+          { t: 'mc', id: 'q4-1b', q: 'Which notes make a D major chord?', o: ['D F A', 'D F# A', 'D G A', 'D E F#'], a: 1, ex: 'D(1) F#(3) A(5).' },
+          { t: 'mc', id: 'q4-1c', q: 'An open G chord (320003) plays G B D G B G. Is it a triad?', o: ['Yes, only 1-3-5', 'No, it has a 7th', 'No, it has a 4th', 'No, it has a 2nd'], a: 0, ex: 'Only G, B and D, doubled.' },
+        ],
+        practice: { type: 'game', game: 'chordTones', title: 'Find the chord tones', how: 'A chord and a tone (root, 3rd or 5th) are shown. Tap that note anywhere on the neck.', types: ['maj'] },
+        jam: { prompt: 'Chord tones only: over each chord, play only its 1, 3 and 5. It sounds “safe”. Then add passing notes in between.', style: 'pop', key: 'C', scale: 'major', tone: 'Clean + chorus' },
+      },
+      {
+        id: 'l4-2', title: 'Major vs minor: it’s the 3rd',
+        cards: [
+          { h: 'One note changes everything', p: 'Major triad = 1, <b>major 3rd</b>, 5. Minor triad = 1, <b>minor 3rd</b>, 5. Lower the 3rd by one fret and major becomes minor.' },
+          { h: 'You already know this', p: 'Going from E to Em you lift one finger: the G# on the G string becomes G. That G# is the major 3rd; the open G is the minor 3rd.', fb: { from: 0, to: 3, marks: () => [{ s: 0, f: 0, label: 'E', root: true }, { s: 1, f: 2, label: 'B' }, { s: 2, f: 2, label: 'E', root: true }, { s: 3, f: 1, label: 'G#' }, { s: 3, f: 0, label: 'G' }, { s: 4, f: 0, label: 'B' }, { s: 5, f: 0, label: 'E', root: true }] } },
+          { h: 'Same with A / Am', p: 'A (x02220) → Am (x02210): the C# on the B string drops to C. Major 3rd → minor 3rd.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q4-2a', q: 'Which notes make A minor?', o: ['A C E', 'A C# E', 'A D E', 'A C Eb'], a: 0, ex: 'A, minor 3rd C, 5th E.' },
+          { t: 'mc', id: 'q4-2b', q: 'D major is D F# A. D minor is…', o: ['D F A', 'D F# Ab', 'D E A', 'Db F A'], a: 0, ex: 'Lower the 3rd: F# → F.' },
+          { t: 'mc', id: 'q4-2c', q: 'Diminished triad = 1, b3 and…', o: ['5', 'b5', '#5', '4'], a: 1, ex: '1 b3 b5: tense and unstable.' },
+        ],
+        practice: { type: 'game', game: 'chordTones', title: 'Major and minor 3rds', how: 'Find the 3rd of major and minor chords. Watch the one-fret difference.', types: ['maj', 'min'] },
+        jam: { prompt: 'Over each chord, find its 3rd and land on it. You’ll hear the chord change in your solo.', style: 'rock', key: 'A', scale: 'minor', tone: 'Crunch' },
+      },
+      {
+        id: 'l4-3', title: 'Chords from the scale',
+        cards: [
+          { h: 'Harmonise the scale', p: 'Build a triad on each note of the major scale, using only scale notes. You get 7 chords: <b>I ii iii IV V vi vii°</b>. Big = major, small = minor.' },
+          { h: 'In C major', p: 'C, Dm, Em, F, G, Am, Bdim. That’s why C, G, Am and F go so well together: they’re all in the same family.' },
+          { h: 'Progressions are numbers', p: 'I–V–vi–IV in C = C G Am F. In G = G D Em C. Thousands of songs use exactly this.' },
+          { h: 'Finding the key of a song', p: 'Look at the chords: which major scale contains all of them? That’s the key, and that scale is what you solo with.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q4-3a', q: 'In G major, which chord is the vi?', o: ['Am', 'Bm', 'Em', 'D'], a: 2, ex: 'G A B C D E F#: 6th = E, minor.' },
+          { t: 'mc', id: 'q4-3b', q: 'In C major, which chord is the V?', o: ['F', 'G', 'Am', 'G minor'], a: 1, ex: 'C D E F G: 5th = G, major.' },
+          { t: 'mc', id: 'q4-3c', q: 'A song uses D, A, Bm, G. What key is it in?', o: ['A major', 'D major', 'G major', 'B minor only'], a: 1, ex: 'D=I, A=V, Bm=vi, G=IV.' },
+          { t: 'mc', id: 'q4-3d', q: 'In any major key, which chords are minor?', o: ['I, IV, V', 'ii, iii, vi', 'ii, V, vi', 'Only vi'], a: 1, ex: 'ii, iii and vi are minor; vii° is diminished.' },
+        ],
+        practice: { type: 'drill', title: 'Play the family', how: 'In G: play G – Am – Bm – C – D – Em – F#dim, saying the numbers (I, ii, iii…). Then play I–V–vi–IV (G D Em C) and hum a melody over it.', bpm: 70 },
+        jam: { prompt: 'This backing is I–vi–IV–V. Name the chords as they pass, and solo with the major pentatonic of the key.', style: 'pop', key: 'D', scale: 'majorPent', tone: 'Clean + chorus' },
+      },
+      {
+        id: 'l4-4', title: 'Seventh chords',
+        cards: [
+          { h: 'Stack one more 3rd', p: 'Add the 7th to a triad and you get a <b>seventh chord</b>: 1 3 5 7. It sounds richer.' },
+          { h: 'The three you need', p: '<b>maj7</b> = 1 3 5 7 (dreamy, soul, Sade-style). <b>7</b> (dominant) = 1 3 5 b7 (bluesy, wants to move). <b>m7</b> = 1 b3 5 b7 (smooth, funky).' },
+          { h: 'Blues breaks the rules', p: 'In a blues, <b>every</b> chord is a dominant 7 (A7, D7, E7). That b7 is the sound of the blues.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q4-4a', q: 'Which notes make G7?', o: ['G B D F', 'G B D F#', 'G Bb D F', 'G B D E'], a: 0, ex: 'G major triad + b7 (F).' },
+          { t: 'mc', id: 'q4-4b', q: 'Cmaj7 is C E G and…', o: ['Bb', 'B', 'A', 'D'], a: 1, ex: 'Major 7th of C = B.' },
+          { t: 'mc', id: 'q4-4c', q: 'Am7 is…', o: ['A C E G', 'A C# E G', 'A C E G#', 'A C Eb G'], a: 0, ex: '1 b3 5 b7.' },
+          { t: 'mc', id: 'q4-4d', q: 'In a standard 12-bar blues in A, the chords are…', o: ['A, D, E', 'A7, D7, E7', 'Am, Dm, Em', 'Amaj7, Dmaj7, E7'], a: 1, ex: 'All dominant 7s.' },
+        ],
+        practice: { type: 'game', game: 'chordTones', title: 'Find the 7ths', how: 'Find roots, 3rds, 5ths and 7ths of seventh chords.', types: ['dom7', 'm7', 'maj7'] },
+        jam: { prompt: 'Blues with b7s: on each chord change, land on that chord’s b7 (G on A7, C on D7, D on E7).', style: 'blues', key: 'A', scale: 'blues', tone: 'Edge-of-breakup + spring reverb' },
+      },
+    ],
+  },
+  {
+    id: 'c5', title: 'Pentatonic & Blues', icon: '🔥',
+    blurb: 'The soloing toolbox of rock and blues, understood properly.',
+    lessons: [
+      {
+        id: 'l5-1', title: 'Minor pentatonic: why it works',
+        cards: [
+          { h: 'Five notes', p: 'Minor pentatonic = natural minor without the 2 and b6: <b>1 b3 4 5 b7</b>. In A: A C D E G.' },
+          { h: 'Box 1', p: 'The shape you probably already know. Roots in gold. In A it sits at frets 5–8.', fb: { from: 4, to: 9, marks: () => scaleMarks('A', 'minorPent', 5, 8) } },
+          { h: 'Why it never sounds wrong', p: 'It removes the two notes that can clash with chords. What’s left are strong notes, so it fits rock, blues, pop… almost everything in a minor key.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q5-1a', q: 'Notes of E minor pentatonic?', o: ['E G A B D', 'E F# G A B', 'E G# B D', 'E G A Bb D'], a: 0, ex: '1 b3 4 5 b7 of E.' },
+          { t: 'mc', id: 'q5-1b', q: 'Which degrees does minor pentatonic remove from natural minor?', o: ['b3 and b7', '2 and b6', '4 and 5', '1 and 5'], a: 1, ex: '2 and b6 removed.' },
+          { t: 'find', id: 'q5-1c', q: 'In A minor pentatonic box 1 (frets 5–8), tap all the A roots.', pc: 9, strings: [0,1,2,3,4,5], from: 5, to: 8, need: 'all', ex: 'Low E 5, D 7, high e 5.' },
+        ],
+        practice: { type: 'drill', title: 'Box 1 by degrees', how: 'Play box 1 in A slowly, saying the degrees: 1, b3, 4, 5, b7. Then play only 1 and b3 and hear the minor sound.', bpm: 75, fb: { from: 4, to: 9, marks: () => scaleMarks('A', 'minorPent', 5, 8, [0,1,2,3,4,5], true) } },
+        jam: { prompt: 'Box 1 in A, but every phrase must end on the root (A) or the 5th (E). Hear how stable those endings are.', style: 'rock', key: 'A', scale: 'minorPent', tone: 'Crunch' },
+      },
+      {
+        id: 'l5-2', title: 'The blue note',
+        cards: [
+          { h: 'Add one note', p: 'Add the <b>b5</b> to the minor pentatonic and you get the <b>blues scale</b>: 1 b3 4 b5 5 b7. In A: A C D <b>Eb</b> E G.' },
+          { h: 'Use it as a passing note', p: 'The b5 is tension. Don’t sit on it: slide or hammer through it (4 → b5 → 5) for that instant blues sound.', fb: { from: 4, to: 9, marks: () => scaleMarks('A', 'blues', 5, 8) } },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q5-2a', q: 'The blue note in A is…', o: ['C', 'D', 'Eb', 'G'], a: 2, ex: 'b5 of A = Eb.' },
+          { t: 'mc', id: 'q5-2b', q: 'How should you usually use the blue note?', o: ['Hold it on strong beats', 'As a passing note', 'Never', 'Only as the last note'], a: 1, ex: 'It works best moving through it.' },
+        ],
+        practice: { type: 'drill', title: 'The 4–b5–5 move', how: 'In A: G string fret 7 (D) → fret 8 (Eb), then B string fret 5 (E). Then the same move on one string: A string frets 5 → 6 → 7. Loop it with hammer-ons and slides.', bpm: 70, fb: { from: 4, to: 9, marks: () => scaleMarks('A', 'blues', 5, 8) } },
+        jam: { prompt: 'Use the blue note in at least every second phrase, always moving through it.', style: 'blues', key: 'A', scale: 'blues', tone: 'Edge-of-breakup + spring reverb' },
+      },
+      {
+        id: 'l5-3', title: 'Major pentatonic: same box, new root',
+        cards: [
+          { h: 'Relative again', p: 'Major pentatonic = <b>1 2 3 5 6</b>. C major pentatonic has the same notes as A minor pentatonic: C D E G A.' },
+          { h: 'The shift trick', p: 'For a major key, take your minor box and slide it <b>3 frets down</b>. A minor pentatonic box is at fret 5, so A <b>major</b> pentatonic is the same shape at fret 2. Roots (A) in gold.', fb: { from: 1, to: 6, marks: () => scaleMarks('A', 'majorPent', 2, 5) } },
+          { h: 'The sound', p: 'Major pentatonic sounds sweet and country/pop. Over a major chord progression, minor pentatonic sounds bluesy; major pentatonic sounds “in” and happy.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q5-3a', q: 'G major pentatonic shares its notes with…', o: ['G minor pentatonic', 'E minor pentatonic', 'A minor pentatonic', 'D minor pentatonic'], a: 1, ex: 'E is the relative minor of G.' },
+          { t: 'mc', id: 'q5-3b', q: 'Notes of C major pentatonic?', o: ['C D E G A', 'C Eb F G Bb', 'C D E F G', 'C E G B'], a: 0, ex: '1 2 3 5 6 of C.' },
+        ],
+        practice: { type: 'drill', title: 'Major vs minor', how: 'Over the same idea, play box 1 at fret 5 (A minor pent) then at fret 2 (A major pent). Hear the mood switch.', bpm: 75, fb: { from: 1, to: 9, marks: () => scaleMarks('A', 'majorPent', 2, 5) } },
+        jam: { prompt: 'Major key backing: solo with major pentatonic. Then switch to minor pentatonic in the same key for 8 bars. Which do you prefer?', style: 'pop', key: 'A', scale: 'majorPent', tone: 'Clean + chorus' },
+      },
+      {
+        id: 'l5-4', title: 'Connecting boxes',
+        cards: [
+          { h: 'Escape box 1', p: 'Box 2 starts where box 1 ends. In A, box 2 covers frets 7–10. Notes in common link the two.', fb: { from: 4, to: 11, marks: () => scaleMarks('A', 'minorPent', 5, 10) } },
+          { h: 'Slide between them', p: 'Play a phrase in box 1, slide up one note on the G or B string, and continue in box 2. Horizontal movement = more fluid solos.' },
+        ],
+        quiz: [
+          { t: 'find', id: 'q5-4a', q: 'In A minor pentatonic, tap the notes on the B string between frets 5 and 10.', pc: -1, multi: [9,0,2,4,7], strings: [4], from: 5, to: 10, need: 'all', ex: 'B string: 5 (E), 8 (G), 10 (A).' },
+        ],
+        practice: { type: 'drill', title: 'Box 1 → box 2 slides', how: 'Play box 1 up to the G string, slide to box 2, finish there. Then go back down. Smooth, no gaps.', bpm: 70, fb: { from: 4, to: 11, marks: () => scaleMarks('A', 'minorPent', 5, 10) } },
+        jam: { prompt: 'Travel: start each phrase in box 1, end it in box 2 (or the opposite).', style: 'rock', key: 'A', scale: 'minorPent', tone: 'Crunch' },
+      },
+    ],
+  },
+  {
+    id: 'c6', title: 'Target Notes', icon: '🎯',
+    blurb: 'The step that makes solos sound like the chords: aim, don’t wander.',
+    lessons: [
+      {
+        id: 'l6-1', title: 'Chord tones vs passing notes',
+        cards: [
+          { h: 'Two kinds of notes', p: 'At any moment, the notes of the current chord (1 3 5) are <b>chord tones</b>: they sound resolved. Other scale notes are <b>passing notes</b>: they create motion.' },
+          { h: 'The rule of thumb', p: 'Put chord tones on strong beats and at the end of phrases. Use passing notes to travel between them.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q6-1a', q: 'Over a C chord, which note is a chord tone?', o: ['D', 'F', 'G', 'A'], a: 2, ex: 'C E G.' },
+          { t: 'mc', id: 'q6-1b', q: 'Where should you usually place chord tones?', o: ['On weak beats only', 'On strong beats and phrase endings', 'Never at the end', 'It doesn’t matter'], a: 1, ex: 'That’s where the ear expects resolution.' },
+        ],
+        practice: { type: 'game', game: 'chordTones', title: 'Chord tone hunt', how: 'Find the chord tones quickly. This is what you will aim for while soloing.', types: ['maj', 'min'] },
+        jam: { prompt: 'The current chord is shown big on screen. End each phrase on one of its chord tones.', style: 'pop', key: 'G', scale: 'majorPent', tone: 'Clean', target: true },
+      },
+      {
+        id: 'l6-2', title: 'Land on the 3rd',
+        cards: [
+          { h: 'The money note', p: 'The <b>3rd</b> of each chord tells the ear exactly which chord is playing. Hitting it right when the chord changes makes your solo “follow the changes”.' },
+          { h: 'Small moves', p: 'From one chord’s 3rd to the next chord’s 3rd is often just 1 or 2 frets. Find the nearest one, not the one in your box.' },
+        ],
+        quiz: [
+          { t: 'mc', id: 'q6-2a', q: 'The 3rd of an Em chord is…', o: ['E', 'F#', 'G', 'G#'], a: 2, ex: 'E minor = E G B.' },
+          { t: 'mc', id: 'q6-2b', q: 'The 3rd of a D chord is…', o: ['F', 'F#', 'A', 'E'], a: 1, ex: 'D F# A.' },
+        ],
+        practice: { type: 'game', game: 'chordTones', title: 'Find the 3rds', how: 'Only 3rds this time. Fast!', types: ['maj', 'min'], only: 1 },
+        jam: { prompt: 'Target practice: when the chord changes, land on its 3rd (shown below the chord).', style: 'pop', key: 'C', scale: 'major', tone: 'Clean + chorus', target: true },
+      },
+    ],
+  },
+  { id: 'c7', title: 'Modes', icon: '🌈', blurb: 'Dorian, Mixolydian and friends: new colours from the same notes.', soon: true, lessons: [] },
+  { id: 'c8', title: 'Phrasing', icon: '🗣️', blurb: 'Bends, vibrato, space, call and response: making notes talk.', soon: true, lessons: [] },
+];
+
+const ALL_LESSONS = CHAPTERS.flatMap(c => c.lessons.map(l => ({ ...l, chapter: c })));
+const LESSON_BY_ID = Object.fromEntries(ALL_LESSONS.map(l => [l.id, l]));
+const QUESTION_BY_ID = {};
+ALL_LESSONS.forEach(l => l.quiz.forEach(q => { QUESTION_BY_ID[q.id] = { ...q, lesson: l.id }; }));
+
+// ---------- Ear training levels ----------
+const EAR_LEVELS = [
+  { id: 1, name: 'Major or minor?', desc: 'Hear a chord. Is it happy (major) or sad (minor)?' },
+  { id: 2, name: 'Chord types', desc: 'Major, minor, dominant 7, major 7, minor 7.' },
+  { id: 3, name: 'Intervals', desc: 'Two notes: how far apart are they?' },
+  { id: 4, name: 'Notes from a reference', desc: 'You hear an A, then a mystery note. Which is it?' },
+  { id: 5, name: 'Progressions', desc: 'A chord progression in a key. Which numbers?' },
+];
+const EAR_INTERVAL_SET = [3, 4, 5, 7, 9, 10, 12, 2, 1];
+const PROGRESSIONS = [
+  { name: 'I – IV – V – I', steps: [[0,'maj'],[5,'maj'],[7,'maj'],[0,'maj']] },
+  { name: 'I – V – vi – IV', steps: [[0,'maj'],[7,'maj'],[9,'min'],[5,'maj']] },
+  { name: 'I – vi – IV – V', steps: [[0,'maj'],[9,'min'],[5,'maj'],[7,'maj']] },
+  { name: 'ii – V – I', steps: [[2,'min'],[7,'maj'],[0,'maj']] },
+  { name: 'I – IV – I – V', steps: [[0,'maj'],[5,'maj'],[0,'maj'],[7,'maj']] },
+  { name: 'vi – IV – I – V', steps: [[9,'min'],[5,'maj'],[0,'maj'],[7,'maj']] },
+];
+
+// ---------- Surprise challenges ----------
+const CHALLENGES = [
+  { title: 'Three-note solo', text: 'Improvise for 2 minutes using only 3 notes. Make them interesting with rhythm, bends and dynamics.' },
+  { title: 'One string only', text: 'Solo using only the G string. You’ll be forced to move along the neck.' },
+  { title: 'Slow and deliberate', text: 'Tempo is low. Every note must count: no fast runs allowed.', bpm: 60 },
+  { title: 'Call and response', text: 'Play a short phrase (the “question”), then answer it with a variation. Repeat.' },
+  { title: 'Bend to the target', text: 'Every phrase must contain a bend that lands exactly in tune on a chord tone.' },
+  { title: 'Random key', text: 'Here’s a key you rarely play in. Find the root first, then go.', randomKey: true },
+  { title: 'Space is a note', text: 'Leave at least one full bar of silence between each phrase.' },
+  { title: 'Rhythm first', text: 'Pick one note. Play it with 4 different rhythms. Then add a second note.' },
+  { title: 'Start on the 3rd', text: 'Start every phrase on the 3rd of the current chord.', target: true },
+  { title: 'Hum it, play it', text: 'Hum a short melody, then find it on the guitar. Do it 3 times.' },
+  { title: 'Dynamics', text: 'Play the same phrase very softly, then very loudly. Use your picking hand and the volume knob.' },
+  { title: 'Two positions', text: 'Each new phrase must be in a different position on the neck than the last one.' },
+  { title: 'Tone swap', text: 'Pick a Pulze preset you never use and make it sound good.', toneHint: 'A preset you never use!' },
+];
+
+const LEVEL_TITLES = ['Bedroom Player', 'Riff Rookie', 'Jam Regular', 'Scale Explorer', 'Solo Seeker', 'Fretboard Navigator', 'Groove Master', 'Phrase Maker', 'Theory Wizard', 'Woodshed Legend'];
+
+// ---------- Persistent state (localStorage) + recordings (IndexedDB) ----------
+const STATE_KEY = 'woodshed.state.v1';
+
+function defaultState() {
+  return {
+    xp: 0,
+    sessions: [],            // {date: ISO, minutes, lessonId, counted}
+    lessonsDone: {},         // lessonId -> date
+    srs: {},                 // questionId -> {box, due}
+    drills: {},              // lessonId -> best clean bpm
+    ear: { unlocked: 1, history: {}, typed: {}, dailyDate: null, dailyScore: null },
+    surpriseDone: null,      // date string
+    weekBonus: {},           // weekKey -> true
+    xpLog: [],
+    settings: { inputId: '', includeBacking: true, backingInRec: 0.55, weeklyGoal: 2, monitor: false, inputGain: 1 },
+    created: new Date().toISOString(),
+  };
+}
+
+const Store = {
+  state: null,
+  load() {
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(STATE_KEY) || 'null'); } catch (e) {}
+    const d = defaultState();
+    this.state = s ? { ...d, ...s, ear: { ...d.ear, ...(s.ear || {}) }, settings: { ...d.settings, ...(s.settings || {}) } } : d;
+    return this.state;
+  },
+  save() { try { localStorage.setItem(STATE_KEY, JSON.stringify(this.state)); } catch (e) {} },
+  reset() { this.state = defaultState(); this.save(); },
+};
+
+// ---- dates & weeks ----
+function todayStr(d = new Date()) {
+  const z = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`;
+}
+function weekKey(d = new Date()) {
+  // ISO week, Monday start
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const wk = Math.ceil(((t - y0) / 86400000 + 1) / 7);
+  return `${t.getUTCFullYear()}-W${String(wk).padStart(2, '0')}`;
+}
+function sessionsThisWeek() {
+  const wk = weekKey();
+  return Store.state.sessions.filter(s => s.counted && weekKey(new Date(s.date)) === wk).length;
+}
+function weekStreak() {
+  // consecutive successful weeks, ending with this week (if already met) or last week
+  const goal = Store.state.settings.weeklyGoal;
+  const counts = {};
+  Store.state.sessions.forEach(s => { if (s.counted) { const k = weekKey(new Date(s.date)); counts[k] = (counts[k] || 0) + 1; } });
+  let streak = 0;
+  const d = new Date();
+  if ((counts[weekKey(d)] || 0) >= goal) streak++;
+  d.setDate(d.getDate() - 7);
+  for (let i = 0; i < 520; i++) {
+    if ((counts[weekKey(d)] || 0) >= goal) { streak++; d.setDate(d.getDate() - 7); }
+    else break;
+  }
+  return streak;
+}
+function daysSinceLastSession() {
+  const c = Store.state.sessions.filter(s => s.counted);
+  if (!c.length) return null;
+  const last = new Date(c[c.length - 1].date);
+  const a = new Date(todayStr()), b = new Date(todayStr(last));
+  return Math.round((a - b) / 86400000);
+}
+
+// ---- XP & levels ----
+const XP_PER_LEVEL = 150;
+function levelInfo(xp = Store.state.xp) {
+  const lvl = Math.floor(xp / XP_PER_LEVEL) + 1;
+  return { lvl, title: LEVEL_TITLES[Math.min(lvl - 1, LEVEL_TITLES.length - 1)], into: xp % XP_PER_LEVEL, need: XP_PER_LEVEL };
+}
+function addXP(n, why) {
+  const before = levelInfo();
+  Store.state.xp += n;
+  Store.state.xpLog.push({ d: new Date().toISOString(), n, why });
+  if (Store.state.xpLog.length > 200) Store.state.xpLog = Store.state.xpLog.slice(-200);
+  Store.save();
+  const after = levelInfo();
+  const unlockedNow = Object.entries(AudioEngine.STYLES).filter(([k, s]) => s.xp > Store.state.xp - n && s.xp <= Store.state.xp).map(([k, s]) => s.name);
+  UI.toast(`+${n} XP · ${why}`);
+  if (after.lvl > before.lvl) setTimeout(() => UI.celebrate(`Level ${after.lvl}!`, after.title), 600);
+  if (unlockedNow.length) setTimeout(() => UI.celebrate('Unlocked!', `New backing track: ${unlockedNow.join(', ')}`), 1400);
+}
+function styleUnlocked(k) { return Store.state.xp >= AudioEngine.STYLES[k].xp; }
+
+// ---- spaced repetition (Leitner boxes) ----
+const SRS_DAYS = [0, 1, 3, 7, 16, 35];
+function srsAnswer(qid, correct) {
+  const it = Store.state.srs[qid] || { box: 0, due: todayStr() };
+  it.box = correct ? Math.min(it.box + 1, SRS_DAYS.length - 1) : 1;
+  const d = new Date(); d.setDate(d.getDate() + SRS_DAYS[it.box]);
+  it.due = todayStr(d);
+  Store.state.srs[qid] = it;
+  Store.save();
+}
+function srsDue() {
+  const t = todayStr();
+  return Object.entries(Store.state.srs).filter(([id, it]) => it.due <= t && QUESTION_BY_ID[id]).map(([id]) => id);
+}
+
+// ---- ear stats ----
+function earRecord(level, correct) {
+  const h = Store.state.ear.history[level] || [];
+  h.push(correct ? 1 : 0);
+  Store.state.ear.history[level] = h.slice(-30);
+  const recent = Store.state.ear.history[level].slice(-20);
+  if (recent.length >= 20 && recent.reduce((a, b) => a + b, 0) >= 16) {
+    if (Store.state.ear.unlocked === level && level < EAR_LEVELS.length) {
+      Store.state.ear.unlocked = level + 1;
+      setTimeout(() => UI.celebrate('Ear level unlocked!', EAR_LEVELS[level].name), 500);
+    }
+    if (!Store.state.ear.typedAvail) Store.state.ear.typedAvail = {};
+    if (!Store.state.ear.typedAvail[level]) {
+      Store.state.ear.typedAvail[level] = true;
+      setTimeout(() => UI.toast('Typed answers unlocked for this level'), 1200);
+    }
+  }
+  Store.save();
+}
+function earAccuracy(level) {
+  const h = (Store.state.ear.history[level] || []).slice(-20);
+  return h.length ? Math.round(100 * h.reduce((a, b) => a + b, 0) / h.length) : null;
+}
+
+// ---- next lesson ----
+function nextLesson() {
+  return ALL_LESSONS.find(l => !Store.state.lessonsDone[l.id]) || null;
+}
+function chapterProgress(ch) {
+  const done = ch.lessons.filter(l => Store.state.lessonsDone[l.id]).length;
+  return { done, total: ch.lessons.length };
+}
+function chapterUnlocked(idx) {
+  if (idx === 0) return true;
+  const prev = CHAPTERS[idx - 1];
+  if (prev.soon) return false;
+  const p = chapterProgress(prev);
+  return p.done >= Math.ceil(p.total / 2); // half of previous chapter opens the next
+}
+
+// ---------- IndexedDB for recordings ----------
+const RecDB = (() => {
+  let dbp = null;
+  function open() {
+    if (dbp) return dbp;
+    dbp = new Promise((res, rej) => {
+      const r = indexedDB.open('woodshed', 1);
+      r.onupgradeneeded = () => { const db = r.result; if (!db.objectStoreNames.contains('recs')) db.createObjectStore('recs', { keyPath: 'id' }); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    return dbp;
+  }
+  async function tx(mode, fn) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const t = db.transaction('recs', mode);
+      const st = t.objectStore('recs');
+      const out = fn(st);
+      t.oncomplete = () => res(out && out.result !== undefined ? out.result : out);
+      t.onerror = () => rej(t.error);
+    });
+  }
+  return {
+    async put(rec) { return tx('readwrite', st => st.put(rec)); },
+    async del(id) { return tx('readwrite', st => st.delete(id)); },
+    async all() {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const t = db.transaction('recs', 'readonly');
+        const r = t.objectStore('recs').getAll();
+        r.onsuccess = () => res((r.result || []).sort((a, b) => b.createdAt - a.createdAt));
+        r.onerror = () => rej(r.error);
+      });
+    },
+    async get(id) {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const r = db.transaction('recs', 'readonly').objectStore('recs').get(id);
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+      });
+    },
+  };
+})();
+
+async function requestPersistence() {
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {}
+}
+
+// ---------- UI helpers ----------
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  if (props) for (const [k, v] of Object.entries(props)) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === 'html') el.innerHTML = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat(Infinity)) {
+    if (c === null || c === undefined || c === false) continue;
+    el.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+  }
+  return el;
+}
+const svgNS = 'http://www.w3.org/2000/svg';
+function s(tag, attrs = {}, ...kids) {
+  const el = document.createElementNS(svgNS, tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
+    else el.setAttribute(k, v);
+  }
+  kids.flat().forEach(c => c && el.appendChild(c instanceof Node ? c : document.createTextNode(String(c))));
+  return el;
+}
+
+const ICONS = {
+  home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  learn: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
+  ear: '<path d="M6 8.5a6 6 0 1 1 12 0c0 3-2 4-3 5.5s-1 2.5-1.5 3.8A3 3 0 0 1 8 17"/><path d="M9.5 8.5a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-1.5 3.5"/>',
+  studio: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/>',
+  journal: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  play: '<path d="M7 4.5v15l13-7.5z" fill="currentColor" stroke="none"/>',
+  pause: '<rect x="6" y="4.5" width="4" height="15" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4.5" width="4" height="15" rx="1" fill="currentColor" stroke="none"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/>',
+  share: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4M12 2v14"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  replay: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+};
+function icon(name, size = 22, fill = false) {
+  const el = document.createElementNS(svgNS, 'svg');
+  el.setAttribute('viewBox', '0 0 24 24'); el.setAttribute('width', size); el.setAttribute('height', size);
+  el.setAttribute('fill', fill ? 'currentColor' : 'none'); el.setAttribute('stroke', 'currentColor');
+  el.setAttribute('stroke-width', '2'); el.setAttribute('stroke-linecap', 'round'); el.setAttribute('stroke-linejoin', 'round');
+  el.innerHTML = ICONS[name];
+  return el;
+}
+
+// ---------- Fretboard ----------
+// opts: { from, to, marks:[{s,f,label,root,cls}], onTap(s,f,el), height }
+function Fretboard(opts) {
+  const from = Math.max(0, opts.from ?? 0), to = opts.to ?? 12;
+  const showOpen = from === 0;
+  const fw = opts.fretWidth || 48, openW = 34, padL = 22, padR = 10, padT = 10, sh = 30;
+  const nFrets = to - Math.max(from, 1) + 1;
+  const width = padL + (showOpen ? openW : 0) + nFrets * fw + padR;
+  const height = padT + sh * 5 + 34;
+  const svg = s('svg', { class: 'fb', width, height, viewBox: `0 0 ${width} ${height}` });
+  const x0 = padL + (showOpen ? openW : 0);
+  const firstFret = Math.max(from, 1);
+  const fretX = f => f === 0 ? padL + openW / 2 : x0 + (f - firstFret + 0.5) * fw;
+  const yOf = st => padT + (5 - st) * sh; // high e on top
+  // board
+  svg.appendChild(s('rect', { x: x0, y: padT - 6, width: nFrets * fw, height: sh * 5 + 12, rx: 6, fill: '#2a1f17' }));
+  // inlays
+  [3, 5, 7, 9, 15, 17].forEach(f => { if (f >= firstFret && f <= to) svg.appendChild(s('circle', { cx: fretX(f), cy: padT + sh * 2.5, r: 6, fill: '#4a3a2c' })); });
+  if (12 >= firstFret && 12 <= to) { svg.appendChild(s('circle', { cx: fretX(12), cy: padT + sh * 1.5, r: 6, fill: '#4a3a2c' })); svg.appendChild(s('circle', { cx: fretX(12), cy: padT + sh * 3.5, r: 6, fill: '#4a3a2c' })); }
+  // frets
+  for (let i = 0; i <= nFrets; i++) {
+    const x = x0 + i * fw;
+    const isNut = i === 0 && firstFret === 1;
+    svg.appendChild(s('line', { x1: x, y1: padT - 6, x2: x, y2: padT + sh * 5 + 6, stroke: isNut ? '#e8dcc8' : '#8a7a66', 'stroke-width': isNut ? 5 : 2 }));
+  }
+  // strings
+  for (let st = 0; st < 6; st++) {
+    const y = yOf(st);
+    svg.appendChild(s('line', { x1: showOpen ? padL + 4 : x0, y1: y, x2: x0 + nFrets * fw, y2: y, stroke: '#cfc3b1', 'stroke-width': 1 + (5 - st) * 0.35, opacity: 0.85 }));
+    svg.appendChild(s('text', { x: 8, y: y + 4, 'font-size': 11, fill: '#a89a8b', 'text-anchor': 'middle' }, STRINGS[st].label));
+  }
+  // fret numbers
+  for (let f = firstFret; f <= to; f++) svg.appendChild(s('text', { x: fretX(f), y: padT + sh * 5 + 26, 'font-size': 11, fill: [3,5,7,9,12,15].includes(f) ? '#f2a541' : '#7a6d60', 'text-anchor': 'middle', 'font-weight': 700 }, f));
+  if (showOpen) svg.appendChild(s('text', { x: fretX(0), y: padT + sh * 5 + 26, 'font-size': 11, fill: '#7a6d60', 'text-anchor': 'middle' }, '0'));
+  // tap cells
+  const marksLayer = s('g');
+  if (opts.onTap) {
+    const fs = []; if (showOpen) fs.push(0); for (let f = firstFret; f <= to; f++) fs.push(f);
+    for (let st = 0; st < 6; st++) for (const f of fs) {
+      const cx = fretX(f), w = f === 0 ? openW : fw;
+      const r = s('rect', { class: 'cell', x: cx - w / 2, y: yOf(st) - sh / 2, width: w, height: sh });
+      r.addEventListener('pointerdown', e => { e.preventDefault(); opts.onTap(st, f); });
+      svg.appendChild(r);
+    }
+  }
+  svg.appendChild(marksLayer);
+  function drawMark(m) {
+    const cls = m.cls || (m.root ? 'root' : '');
+    const colors = { root: ['#f2a541', '#241505'], good: ['#4fc18f', '#062517'], bad: ['#ef5d5d', '#fff'], shown: ['#6cb4ee', '#06213a'], '': ['#f4ede4', '#1b1714'], ghost: ['#3a322b', '#f4ede4'] };
+    const [fill, tc] = colors[cls] || colors[''];
+    const g = s('g', { class: 'mark' });
+    g.appendChild(s('circle', { cx: fretX(m.f), cy: yOf(m.s), r: 12.5, fill, stroke: '#120f0d' }));
+    if (m.label !== undefined && m.label !== '') g.appendChild(s('text', { x: fretX(m.f), y: yOf(m.s) + 4, 'font-size': String(m.label).length > 2 ? 9 : 11, 'font-weight': 800, fill: tc, 'text-anchor': 'middle' }, m.label));
+    marksLayer.appendChild(g);
+    return g;
+  }
+  (opts.marks || []).forEach(drawMark);
+  const wrap = h('div', { class: 'fbwrap' }, svg);
+  wrap.addMark = drawMark;
+  wrap.clearMarks = () => { marksLayer.innerHTML = ''; };
+  wrap.scrollToFret = f => { requestAnimationFrame(() => { wrap.scrollLeft = Math.max(0, fretX(f) - wrap.clientWidth / 2); }); };
+  return wrap;
+}
+
+// ---------- toast, modal, celebrate ----------
+const UI = {
+  toast(msg) {
+    let t = document.querySelector('.toast');
+    if (!t) { t = h('div', { class: 'toast' }); document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._tm); t._tm = setTimeout(() => t.classList.remove('show'), 2200);
+  },
+  modal(content, { centered = false, onClose } = {}) {
+    const m = h('div', { class: 'modal' + (centered ? ' centered' : '') }, content);
+    const bg = h('div', { class: 'modal-bg', onclick: e => { if (e.target === bg) close(); } }, m);
+    function close() { bg.remove(); onClose && onClose(); }
+    document.body.appendChild(bg);
+    return { close, el: m };
+  },
+  confirm(title, text, okLabel = 'OK', danger = false) {
+    return new Promise(res => {
+      const md = UI.modal(h('div', { class: 'stack' },
+        h('h2', null, title), text && h('p', { class: 'muted' }, text),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn grow', onclick: () => { md.close(); res(false); } }, 'Cancel'),
+          h('button', { class: 'btn grow ' + (danger ? 'danger' : 'primary'), onclick: () => { md.close(); res(true); } }, okLabel))), { centered: true, onClose: () => res(false) });
+    });
+  },
+  prompt(title, value = '', placeholder = '') {
+    return new Promise(res => {
+      const inp = h('input', { value, placeholder });
+      const md = UI.modal(h('form', { class: 'stack', onsubmit: e => { e.preventDefault(); md.close(); res(inp.value.trim()); } },
+        h('h2', null, title), inp,
+        h('div', { class: 'row' },
+          h('button', { type: 'button', class: 'btn grow', onclick: () => { md.close(); res(null); } }, 'Cancel'),
+          h('button', { type: 'submit', class: 'btn grow primary' }, 'Save'))), { centered: true });
+      setTimeout(() => inp.focus(), 50);
+    });
+  },
+  celebrate(title, sub, emoji = '🎉') {
+    const md = UI.modal(h('div', { class: 'celebrate stack' },
+      h('div', { class: 'big' }, emoji), h('h1', null, title), sub && h('p', { class: 'muted' }, sub),
+      h('button', { class: 'btn primary block', onclick: () => md.close() }, 'Nice!')), { centered: true });
+  },
+};
+
+function fmtTime(sec) { sec = Math.max(0, Math.round(sec)); return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+function toggleEl(on, onchange) {
+  const t = h('button', { class: 'toggle' + (on ? ' on' : ''), role: 'switch' });
+  t.addEventListener('click', () => { on = !on; t.classList.toggle('on', on); onchange(on); });
+  return t;
+}
+
+// ---------- Interactive components ----------
+
+// A single quiz question. onResult(correct) is called once the user continues.
+function QuestionView(q, onResult) {
+  const root = h('div', { class: 'stack' });
+  root.appendChild(h('h3', null, q.q));
+  let answered = false;
+  const fbBox = h('div');
+  function finish(correct, extra) {
+    if (answered) return; answered = true;
+    fbBox.appendChild(h('div', { class: 'feedback ' + (correct ? 'ok' : 'no') },
+      h('b', null, correct ? 'Correct!' : 'Not quite.'), ' ', h('span', { class: 'muted' }, extra || q.ex || '')));
+    fbBox.appendChild(h('button', { class: 'btn primary block', style: { marginTop: '12px' }, onclick: () => onResult(correct) }, 'Continue'));
+    setTimeout(() => fbBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  }
+  if (q.t === 'mc') {
+    const opts = q.o.map((o, i) => ({ o, i }));
+    const list = h('div', { class: 'col' });
+    opts.forEach(({ o, i }) => {
+      const b = h('button', { class: 'option', onclick: () => {
+        if (answered) return;
+        list.querySelectorAll('.option').forEach((x, j) => { if (j === q.a) x.classList.add('right'); });
+        if (i !== q.a) b.classList.add('wrong');
+        finish(i === q.a);
+      } }, o);
+      list.appendChild(b);
+    });
+    root.appendChild(list);
+  } else if (q.t === 'find') {
+    const pcs = q.multi || [q.pc];
+    const targets = [];
+    for (const st of q.strings) for (let f = q.from; f <= q.to; f++) if (pcs.includes(fretPc(st, f))) targets.push(st + ':' + f);
+    const found = new Set();
+    let mistakes = 0;
+    const status = h('p', { class: 'muted small' }, q.need === 'all' ? `Found 0 / ${targets.length}` : 'Tap one position');
+    const fb = Fretboard({
+      from: Math.max(0, q.from - 1), to: Math.min(15, q.to + 1), marks: q.shown || [],
+      onTap: (st, f) => {
+        if (answered) return;
+        const k = st + ':' + f;
+        if (targets.includes(k)) {
+          if (found.has(k)) return;
+          found.add(k);
+          fb.addMark({ s: st, f, label: noteName(fretPc(st, f)), cls: 'good' });
+          AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.35 });
+          if (q.need === 'one' || found.size === targets.length) finish(mistakes === 0, mistakes ? `${mistakes} wrong tap${mistakes > 1 ? 's' : ''}. ${q.ex || ''}` : q.ex);
+          else status.textContent = `Found ${found.size} / ${targets.length}`;
+        } else {
+          mistakes++;
+          const m = fb.addMark({ s: st, f, label: noteName(fretPc(st, f)), cls: 'bad' });
+          setTimeout(() => m.remove(), 700);
+        }
+      },
+    });
+    root.appendChild(fb);
+    root.appendChild(h('div', { class: 'row between' }, status,
+      h('button', { class: 'btn sm ghost', onclick: () => {
+        if (answered) return;
+        targets.forEach(k => { if (!found.has(k)) { const [st, f] = k.split(':').map(Number); fb.addMark({ s: st, f, label: noteName(fretPc(st, f)), cls: 'shown' }); } });
+        finish(false);
+      } }, 'Show me')));
+    const firstF = q.from;
+    fb.scrollToFret(firstF + 2);
+  }
+  root.appendChild(fbBox);
+  return root;
+}
+
+// Lesson: cards then quiz. opts: {onDone(result), review:[qids]}
+function LessonPlayer(lesson, opts = {}) {
+  const root = h('div', { class: 'stack' });
+  const reviewIds = opts.review;
+  const cards = reviewIds ? [] : lesson.cards;
+  const quiz = reviewIds ? reviewIds.map(id => QUESTION_BY_ID[id]) : lesson.quiz;
+  let ci = 0, qi = 0, correct = 0;
+  function render() {
+    root.innerHTML = '';
+    if (ci < cards.length) {
+      const c = cards[ci];
+      root.appendChild(h('div', { class: 'dots' }, cards.map((_, i) => h('i', { class: i === ci ? 'on' : '' }))));
+      const card = h('div', { class: 'card lessoncard' }, h('div', { class: 'tiny' }, `${lesson.title} · ${ci + 1}/${cards.length}`), h('h2', null, c.h), h('p', { html: c.p }));
+      if (c.fb) {
+        const fb = Fretboard({ from: c.fb.from, to: c.fb.to, marks: c.fb.marks(), onTap: (st, f) => AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.35 }) });
+        card.appendChild(fb);
+        card.appendChild(h('p', { class: 'muted small' }, 'Tap the fretboard to hear notes.'));
+        if (c.fb.from > 3) fb.scrollToFret(c.fb.from + 2);
+      }
+      root.appendChild(card);
+      root.appendChild(h('div', { class: 'row' },
+        ci > 0 ? h('button', { class: 'btn', onclick: () => { ci--; render(); } }, 'Back') : null,
+        h('button', { class: 'btn primary grow', onclick: () => { ci++; render(); window.scrollTo(0, 0); } }, ci === cards.length - 1 ? 'Quiz time →' : 'Next')));
+      return;
+    }
+    if (qi < quiz.length) {
+      const q = quiz[qi];
+      root.appendChild(h('div', { class: 'row between' }, h('div', { class: 'tiny' }, reviewIds ? `Review · ${qi + 1}/${quiz.length}` : `Quiz · ${qi + 1}/${quiz.length}`), h('div', { class: 'badge' }, `${correct} correct`)));
+      root.appendChild(h('div', { class: 'card' }, QuestionView(q, ok => {
+        if (ok) correct++;
+        srsAnswer(q.id, ok);
+        qi++; render(); window.scrollTo(0, 0);
+      })));
+      return;
+    }
+    // done
+    const first = !reviewIds && !Store.state.lessonsDone[lesson.id];
+    const xp = (first ? 20 : 5) + correct * 2;
+    if (!reviewIds) { Store.state.lessonsDone[lesson.id] = Store.state.lessonsDone[lesson.id] || todayStr(); Store.save(); }
+    root.appendChild(h('div', { class: 'card center stack' },
+      h('div', { style: { fontSize: '48px' } }, correct === quiz.length ? '🏆' : correct >= quiz.length / 2 ? '👍' : '💪'),
+      h('h2', null, reviewIds ? 'Review done' : 'Lesson complete'),
+      h('p', { class: 'muted' }, `${correct} / ${quiz.length} correct. Missed questions will come back in your reviews.`),
+      h('button', { class: 'btn primary block', onclick: () => opts.onDone && opts.onDone({ correct, total: quiz.length }) }, opts.doneLabel || 'Continue')));
+    addXP(xp, reviewIds ? 'Review' : 'Lesson');
+  }
+  render();
+  return root;
+}
+
+// ---------- Fretboard games ----------
+function GameView(cfg, onDone) {
+  const root = h('div', { class: 'stack' });
+  const TOTAL = cfg.game === 'findNote' ? 30 : 10; // seconds for findNote, rounds otherwise
+  let round = 0, score = 0, timeLeft = TOTAL, timer = null, started = false;
+  const head = h('div', { class: 'row between' });
+  const prompt = h('h2', { class: 'center' });
+  const area = h('div');
+  root.append(head, prompt, area);
+  const from = cfg.from ?? 0, to = cfg.to ?? 12, strings = cfg.strings || [0,1,2,3,4,5];
+
+  function setHead() {
+    head.innerHTML = '';
+    head.append(h('div', { class: 'tiny' }, cfg.title || 'Game'),
+      h('div', { class: 'badge accent' }, cfg.game === 'findNote' ? `⏱ ${timeLeft}s · ${score} pts` : `Round ${Math.min(round + 1, TOTAL)}/${TOTAL} · ${score} pts`));
+  }
+  function end() {
+    clearInterval(timer);
+    const key = 'game:' + cfg.game + ':' + (cfg.strings || []).join('');
+    const best = Store.state.drills[key] || 0;
+    const isBest = score > best;
+    if (isBest) { Store.state.drills[key] = score; Store.save(); }
+    area.innerHTML = ''; prompt.textContent = '';
+    area.appendChild(h('div', { class: 'card center stack' },
+      h('div', { style: { fontSize: '44px' } }, isBest ? '🥇' : '🎯'),
+      h('h2', null, `${score} points`),
+      h('p', { class: 'muted' }, isBest ? 'New personal best!' : `Best: ${best}`),
+      h('div', { class: 'row' },
+        h('button', { class: 'btn grow', onclick: () => { root.replaceWith(GameView(cfg, onDone)); } }, 'Again'),
+        onDone ? h('button', { class: 'btn primary grow', onclick: () => onDone(score) }, 'Continue') : null)));
+    addXP(5, 'Fretboard game');
+  }
+  function next() {
+    if (cfg.game !== 'findNote' && round >= TOTAL) return end();
+    setHead();
+    area.innerHTML = '';
+    ({ nameNote, findNote, interval, chordTones })[cfg.game]();
+  }
+  function nameNote() {
+    const st = pick(strings), f = randInt(from, to);
+    const pc = fretPc(st, f);
+    prompt.textContent = 'What note is this?';
+    const fb = Fretboard({ from, to, marks: [{ s: st, f, label: '?', cls: 'shown' }] });
+    area.appendChild(fb); fb.scrollToFret(f);
+    const opts = shuffle([pc, ...shuffle([...Array(12).keys()].filter(x => x !== pc)).slice(0, 3)]);
+    const grid = h('div', { class: 'grid2', style: { marginTop: '12px' } });
+    opts.forEach(o => grid.appendChild(h('button', { class: 'option center', onclick: e => {
+      if (grid.dataset.done) return; grid.dataset.done = 1;
+      AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.35 });
+      if (o === pc) { score++; e.target.classList.add('right'); } else { e.target.classList.add('wrong'); [...grid.children][opts.indexOf(pc)].classList.add('right'); }
+      round++; setTimeout(next, o === pc ? 450 : 1100);
+    } }, bothNames(o))));
+    area.appendChild(grid);
+  }
+  function findNote() {
+    const pc = randInt(0, 11);
+    const targets = [];
+    for (const st of strings) for (let f = from; f <= to; f++) if (fretPc(st, f) === pc) targets.push(st + ':' + f);
+    const found = new Set();
+    prompt.innerHTML = '';
+    prompt.append('Find every ', h('span', { style: { color: 'var(--accent)' } }, bothNames(pc)));
+    const fb = Fretboard({ from, to, onTap: (st, f) => {
+      if (!started) return;
+      const k = st + ':' + f;
+      if (targets.includes(k) && !found.has(k)) {
+        found.add(k); score++; setHead();
+        fb.addMark({ s: st, f, label: noteName(pc), cls: 'good' });
+        AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.3 });
+        if (found.size === targets.length) setTimeout(next, 300);
+      } else if (!targets.includes(k)) {
+        score = Math.max(0, score - 1); setHead();
+        const m = fb.addMark({ s: st, f, label: noteName(fretPc(st, f)), cls: 'bad' }); setTimeout(() => m.remove(), 500);
+      }
+    } });
+    area.appendChild(fb);
+    area.appendChild(h('p', { class: 'muted small center' }, `${targets.length} to find on these strings. Scroll for higher frets.`));
+  }
+  function interval() {
+    const set = cfg.set || [3, 4, 7, 12];
+    const iv = pick(set);
+    const st = randInt(0, 2), f = randInt(3, 8);
+    const rootPc = fretPc(st, f), target = mod12(rootPc + iv);
+    const ivInfo = INTERVALS.find(x => x.semi === iv);
+    prompt.innerHTML = '';
+    prompt.append('Tap the ', h('span', { style: { color: 'var(--accent)' } }, ivInfo.name), ' above ', noteName(rootPc));
+    let done = false;
+    const fb = Fretboard({ from: Math.max(0, f - 3), to: Math.min(15, f + 6), marks: [{ s: st, f, label: 'R', root: true }], onTap: (s2, f2) => {
+      if (done) return;
+      const p = fretMidi(s2, f2) - fretMidi(st, f);
+      const ok = fretPc(s2, f2) === target && p > 0 && (iv !== 12 || p === 12 || p === 24);
+      AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.3 });
+      AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now() + 0.35, { gain: 0.3 });
+      if (ok) { done = true; score++; fb.addMark({ s: s2, f: f2, label: ivInfo.short, cls: 'good' }); round++; setTimeout(next, 900); }
+      else { const m = fb.addMark({ s: s2, f: f2, label: '✕', cls: 'bad' }); setTimeout(() => m.remove(), 600); score = Math.max(0, score - 0); round += 0; fb.dataset.miss = (+fb.dataset.miss || 0) + 1; if (+fb.dataset.miss >= 3) { done = true; showAnswer(); } }
+    } });
+    function showAnswer() {
+      for (let s2 = 0; s2 < 6; s2++) for (let f2 = Math.max(0, f - 3); f2 <= Math.min(15, f + 6); f2++) {
+        const p = fretMidi(s2, f2) - fretMidi(st, f);
+        if (fretPc(s2, f2) === target && p > 0) fb.addMark({ s: s2, f: f2, label: ivInfo.short, cls: 'shown' });
+      }
+      round++; setTimeout(next, 1800);
+    }
+    area.appendChild(fb);
+    area.appendChild(h('p', { class: 'muted small center' }, 'Must be higher than the root. 3 tries.'));
+  }
+  function chordTones() {
+    const types = cfg.types || ['maj'];
+    const type = pick(types), rootPc = randInt(0, 11);
+    const iv = CHORD_TYPES[type].iv;
+    const idx = cfg.only !== undefined ? cfg.only : randInt(0, iv.length - 1);
+    const names = ['root', '3rd', '5th', '7th'];
+    const target = mod12(rootPc + iv[idx]);
+    const flats = FLAT_KEYS.has(noteName(rootPc, true)) || [5, 10, 3, 8, 1].includes(rootPc);
+    prompt.innerHTML = '';
+    prompt.append('Tap the ', h('span', { style: { color: 'var(--accent)' } }, names[idx]), ' of ', h('b', null, chordName(rootPc, type, flats)));
+    let done = false, miss = 0;
+    const fb = Fretboard({ from: 0, to: 12, onTap: (s2, f2) => {
+      if (done) return;
+      if (fretPc(s2, f2) === target) {
+        done = true; score++;
+        fb.addMark({ s: s2, f: f2, label: noteName(target, flats), cls: 'good' });
+        AudioEngine.strum(chordVoicing(rootPc, type), AudioEngine.now(), { gain: 0.2 });
+        AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now() + 0.5, { gain: 0.4 });
+        round++; setTimeout(next, 1100);
+      } else {
+        miss++;
+        const m = fb.addMark({ s: s2, f: f2, label: noteName(fretPc(s2, f2), flats), cls: 'bad' }); setTimeout(() => m.remove(), 600);
+        if (miss >= 3) { done = true; area.appendChild(h('p', { class: 'center' }, `The ${names[idx]} of ${chordName(rootPc, type, flats)} is `, h('b', null, noteName(target, flats)))); round++; setTimeout(next, 1800); }
+      }
+    } });
+    area.appendChild(fb);
+    area.appendChild(h('p', { class: 'muted small center' }, `${chordName(rootPc, type, flats)} = ${iv.map(i => noteName(rootPc + i, flats)).map((n, i) => i === idx ? '?' : n).join(' ')}`));
+  }
+
+  // intro screen
+  setHead();
+  prompt.textContent = '';
+  area.appendChild(h('div', { class: 'card stack' }, h('h3', null, cfg.title), h('p', { class: 'muted' }, cfg.how),
+    h('button', { class: 'btn primary block', onclick: () => {
+      AudioEngine.ensure(); started = true;
+      if (cfg.game === 'findNote') {
+        timer = setInterval(() => { timeLeft--; setHead(); if (timeLeft <= 0) end(); }, 1000);
+      }
+      next();
+    } }, 'Start')));
+  root.cleanup = () => clearInterval(timer);
+  return root;
+}
+
+// ---------- Drill with metronome ----------
+function DrillView(cfg, lessonId, onDone) {
+  let bpm = Store.state.drills[lessonId] || cfg.bpm || 70;
+  let running = false, timer = null, beatN = 0;
+  const bpmEl = h('div', { class: 'timer', style: { fontSize: '40px' } }, bpm);
+  const beats = h('div', { class: 'row', style: { justifyContent: 'center' } }, [0,1,2,3].map(() => h('i', { class: 'beat' })));
+  const startBtn = h('button', { class: 'btn primary grow', onclick: toggle }, '▶ Metronome');
+  function tick() {
+    const t = AudioEngine.now() + 0.02;
+    AudioEngine.click(t, beatN % 4 === 0);
+    const b = beatN % 4;
+    [...beats.children].forEach((x, i) => x.classList.toggle('on', i === b));
+    beatN++;
+  }
+  function restart() { clearInterval(timer); beatN = 0; tick(); timer = setInterval(tick, 60000 / bpm); }
+  function toggle() {
+    AudioEngine.ensure();
+    running = !running;
+    startBtn.textContent = running ? '■ Stop' : '▶ Metronome';
+    if (running) restart(); else { clearInterval(timer); [...beats.children].forEach(x => x.classList.remove('on')); }
+  }
+  function setBpm(v) { bpm = Math.max(40, Math.min(220, v)); bpmEl.textContent = bpm; if (running) restart(); }
+  const best = Store.state.drills[lessonId];
+  const root = h('div', { class: 'stack' },
+    h('div', { class: 'card stack' }, h('h3', null, cfg.title), h('p', { class: 'muted' }, cfg.how),
+      cfg.fb ? (() => { const fb = Fretboard({ from: cfg.fb.from, to: cfg.fb.to, marks: cfg.fb.marks(), onTap: (st, f) => AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.35 }) }); if (cfg.fb.from > 3) fb.scrollToFret(cfg.fb.from + 2); return fb; })() : null),
+    h('div', { class: 'card stack center' },
+      h('div', { class: 'tiny' }, 'Tempo (BPM)'),
+      h('div', { class: 'row', style: { justifyContent: 'center', gap: '18px' } },
+        h('button', { class: 'iconbtn', onclick: () => setBpm(bpm - 5) }, '−5'), bpmEl, h('button', { class: 'iconbtn', onclick: () => setBpm(bpm + 5) }, '+5')),
+      beats,
+      h('div', { class: 'row' }, startBtn),
+      h('p', { class: 'muted small' }, best ? `Your best clean tempo: ${best} BPM. Try +5.` : 'Start slow. Raise the tempo only when it’s clean.'),
+      h('button', { class: 'btn block', onclick: () => {
+        const prev = Store.state.drills[lessonId] || 0;
+        if (bpm > prev) { Store.state.drills[lessonId] = bpm; Store.save(); UI.toast(`New best: ${bpm} BPM`); addXP(5, 'Tempo record'); }
+        else UI.toast(`Saved. Best is still ${prev} BPM`);
+      } }, '✓ I played it clean at this tempo')),
+    onDone ? h('button', { class: 'btn primary block', onclick: () => { clearInterval(timer); onDone(); } }, 'Continue') : null);
+  root.cleanup = () => clearInterval(timer);
+  return root;
+}
+
+// ---------- Studio: backing track + recording ----------
+// cfg: {style, key, bpm, scale, prompt, tone, target, title, challenge}
+function StudioView(cfg = {}, opts = {}) {
+  const st = Store.state;
+  let style = cfg.style && styleUnlocked(cfg.style) ? cfg.style : (cfg.style ? 'rock' : (st.lastStudio?.style || 'rock'));
+  let key = cfg.key || st.lastStudio?.key || 'A';
+  let bpm = cfg.bpm || AudioEngine.STYLES[style].bpm;
+  let scale = cfg.scale || AudioEngine.STYLES[style].scales[0];
+  let curChord = null, nextChord = null;
+  let meterRAF = null, recTimer = null;
+  const root = h('div', { class: 'stack' });
+
+  const flatsFor = k => FLAT_KEYS.has(k) || ['F','Bb','Eb','Ab','Db','Gb'].includes(k);
+  function keyLabel() {
+    const t = AudioEngine.STYLES[style].tonality;
+    return t === 'minor' ? `${key} minor` : t === 'major' ? `${key} major` : t === 'blues' ? `${key} blues` : key;
+  }
+
+  const chordEl = h('div', { class: 'chordbig' }, '–');
+  const nextEl = h('div', { class: 'muted small' }, '');
+  const targetEl = h('div', { class: 'small', style: { color: 'var(--accent2)' } });
+  const beatsEl = h('div', { class: 'row', style: { justifyContent: 'center' } }, [0,1,2,3].map(() => h('i', { class: 'beat' })));
+  const playBtn = h('button', { class: 'btn grow', onclick: () => togglePlay() }, '▶ Play backing');
+  const meter = h('div', { class: 'meter grow' }, h('i'));
+  const recTime = h('div', { class: 'timer' }, '0:00');
+  const recBtn = h('button', { class: 'recbtn', onclick: () => toggleRec(), 'aria-label': 'Record' }, h('span'));
+  const recStatus = h('p', { class: 'muted small center' }, 'Plug in your Pulze Mini, then tap to record.');
+  const fbHolder = h('div');
+
+  function renderFretboard() {
+    fbHolder.innerHTML = '';
+    const marks = scaleMarks(key, scale, 0, 15, [0,1,2,3,4,5]);
+    const fb = Fretboard({ from: 0, to: 15, marks, fretWidth: 42, onTap: (s2, f2) => AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now(), { gain: 0.35 }) });
+    fbHolder.appendChild(fb);
+    const rootFret = (() => { for (let f = 3; f <= 12; f++) if (fretPc(0, f) === pcOf(key)) return f; return 5; })();
+    fb.scrollToFret(rootFret + 2);
+  }
+
+  function onBar(bar, rootPc, type, np) {
+    const fl = flatsFor(key);
+    curChord = { rootPc, type };
+    chordEl.textContent = AudioEngine.STYLES[style].tonality === 'none' ? '♩' : chordName(rootPc, type, fl);
+    const nr = mod12(pcOf(key) + np[0]);
+    nextEl.textContent = AudioEngine.STYLES[style].tonality === 'none' ? '' : 'next: ' + chordName(nr, np[1], fl);
+    if (cfg.target && AudioEngine.STYLES[style].tonality !== 'none') {
+      const iv = CHORD_TYPES[type].iv;
+      targetEl.textContent = `🎯 3rd = ${noteName(rootPc + iv[1], fl)} · 5th = ${noteName(rootPc + iv[2], fl)}`;
+    } else targetEl.textContent = '';
+  }
+  function onBeat(b) { [...beatsEl.children].forEach((x, i) => x.classList.toggle('on', i === b)); }
+
+  function startPlay() {
+    AudioEngine.startBacking({ style, key, bpm }, { onBar, onBeat });
+    playBtn.textContent = '■ Stop backing';
+  }
+  function stopPlay() {
+    AudioEngine.stopBacking();
+    playBtn.textContent = '▶ Play backing';
+    chordEl.textContent = '–'; nextEl.textContent = ''; targetEl.textContent = '';
+    [...beatsEl.children].forEach(x => x.classList.remove('on'));
+  }
+  function togglePlay() { AudioEngine.ensure(); if (AudioEngine.backingPlaying) stopPlay(); else startPlay(); }
+  function restartIfPlaying() { if (AudioEngine.backingPlaying && !AudioEngine.isRecording()) startPlay(); }
+
+  async function toggleRec() {
+    AudioEngine.ensure();
+    if (AudioEngine.isRecording()) return stopRec();
+    try {
+      recStatus.textContent = 'Opening input…';
+      await AudioEngine.openInput(st.settings.inputId);
+      AudioEngine.setInputGain(st.settings.inputGain);
+      AudioEngine.setMonitor(st.settings.monitor);
+      if (!AudioEngine.backingPlaying && style !== 'metronome') startPlay();
+      if (!AudioEngine.backingPlaying && style === 'metronome') startPlay();
+      AudioEngine.startRecording({ includeBacking: st.settings.includeBacking, backingLevel: st.settings.backingInRec });
+      recBtn.classList.add('on');
+      recStatus.innerHTML = '';
+      recStatus.append(h('span', { class: 'recdot' }), ' Recording…');
+      const tick = () => { recTime.textContent = fmtTime(AudioEngine.elapsed()); meter.firstChild.style.width = Math.min(100, AudioEngine.level() * 110) + '%'; meterRAF = requestAnimationFrame(tick); };
+      tick();
+    } catch (e) {
+      recStatus.textContent = 'Could not open the input: ' + (e && e.message ? e.message : e) + '. Allow microphone access in Settings › Safari (or for the app).';
+    }
+  }
+  async function stopRec() {
+    cancelAnimationFrame(meterRAF);
+    const res = await AudioEngine.stopRecording();
+    stopPlay();
+    AudioEngine.closeInput();
+    recBtn.classList.remove('on');
+    meter.firstChild.style.width = '0%';
+    recStatus.textContent = 'Plug in your Pulze Mini, then tap to record.';
+    if (!res || !res.blob.size) { UI.toast('Nothing recorded'); return; }
+    saveSheet(res);
+  }
+
+  function saveSheet(res) {
+    const defTitle = cfg.title || `${AudioEngine.STYLES[style].name} in ${keyLabel()}`;
+    const titleIn = h('input', { value: defTitle });
+    const toneIn = h('input', { value: st.lastTone || '', placeholder: 'e.g. “Plexi crunch”, “Clean + delay”' });
+    let fav = false;
+    const audio = h('audio', { controls: true, src: URL.createObjectURL(res.blob), style: { width: '100%' } });
+    const md = UI.modal(h('div', { class: 'stack' },
+      h('h2', null, 'Save this take?'),
+      h('p', { class: 'muted small' }, `${fmtTime(res.duration)} · ${AudioEngine.STYLES[style].name} · ${keyLabel()} · ${bpm} BPM`),
+      audio,
+      h('div', { class: 'tiny' }, 'Title'), titleIn,
+      h('div', { class: 'tiny' }, 'Pulze tone / preset used'), toneIn,
+      h('div', { class: 'row between' }, h('span', null, '♥ Favourite'), toggleEl(false, v => fav = v)),
+      h('div', { class: 'row' },
+        h('button', { class: 'btn danger grow', onclick: async () => { if (await UI.confirm('Discard this take?', 'It will be deleted.', 'Discard', true)) { md.close(); opts.onDiscard && opts.onDiscard(); } } }, 'Discard'),
+        h('button', { class: 'btn primary grow', onclick: async () => {
+          const rec = {
+            id: 'r' + Date.now(), blob: res.blob, mime: res.mime, createdAt: Date.now(), duration: res.duration,
+            title: titleIn.value.trim() || defTitle, tone: toneIn.value.trim(), fav,
+            ctx: { style, key: keyLabel(), bpm, scale, prompt: cfg.prompt || '', source: opts.mode || 'studio', lesson: cfg.lessonId || null },
+          };
+          try { await RecDB.put(rec); } catch (e) { UI.toast('Could not save: ' + e.message); return; }
+          st.lastTone = rec.tone; Store.save();
+          md.close();
+          UI.toast('Saved to your Journal');
+          opts.onSaved && opts.onSaved(rec);
+        } }, 'Save'))));
+  }
+
+  function styleChips() {
+    return h('div', { class: 'chips' }, Object.entries(AudioEngine.STYLES).map(([k, sv]) => {
+      const locked = !styleUnlocked(k);
+      return h('button', { class: 'chip' + (k === style ? ' on' : '') + (locked ? ' locked' : ''), onclick: () => {
+        if (locked) return UI.toast(`Unlocks at ${sv.xp} XP (you have ${Store.state.xp})`);
+        if (AudioEngine.isRecording()) return;
+        style = k; bpm = sv.bpm; scale = sv.scales[0]; saveLast(); render(); restartIfPlaying();
+      } }, (locked ? '🔒 ' : '') + sv.name);
+    }));
+  }
+  function saveLast() { st.lastStudio = { style, key }; Store.save(); }
+
+  function render() {
+    root.innerHTML = '';
+    const sv = AudioEngine.STYLES[style];
+    if (cfg.prompt) root.appendChild(h('div', { class: 'card hero stack' },
+      h('div', { class: 'tiny', style: { color: 'var(--accent2)' } }, cfg.challenge ? 'Challenge' : 'Your mission'),
+      cfg.challenge ? h('h3', null, cfg.challenge) : null,
+      h('p', null, cfg.prompt),
+      h('p', { class: 'small muted' }, '🎛 Suggested tone: ' + (cfg.tone || sv.tone))));
+    if (!opts.lockStyle) root.appendChild(styleChips());
+    const keySel = h('select', { onchange: e => { key = e.target.value; saveLast(); renderFretboard(); restartIfPlaying(); } }, KEYS.map(k => h('option', { value: k, selected: k === key ? true : null }, k)));
+    const scaleSel = h('select', { onchange: e => { scale = e.target.value; renderFretboard(); } },
+      [...new Set([...sv.scales, 'minorPent', 'majorPent', 'blues', 'major', 'minor', 'dorian', 'mixolydian'])].map(k => h('option', { value: k, selected: k === scale ? true : null }, SCALES[k].name)));
+    const bpmLbl = h('span', { class: 'timer' }, bpm + ' BPM');
+    const bpmIn = h('input', { type: 'range', class: 'slider', min: 50, max: 180, value: bpm, oninput: e => { bpm = +e.target.value; bpmLbl.textContent = bpm + ' BPM'; }, onchange: () => restartIfPlaying() });
+    root.appendChild(h('div', { class: 'card stack' },
+      h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 'tiny' }, 'Key'), keySel), h('div', { class: 'grow', style: { flex: 2 } }, h('div', { class: 'tiny' }, 'Scale to use'), scaleSel)),
+      h('div', { class: 'row between' }, h('div', { class: 'tiny' }, 'Tempo'), bpmLbl), bpmIn));
+    root.appendChild(h('div', { class: 'card stack center' },
+      h('div', { class: 'tiny' }, sv.tonality === 'none' ? 'Metronome' : keyLabel()),
+      chordEl, nextEl, targetEl, beatsEl,
+      h('div', { class: 'row' }, playBtn)));
+    root.appendChild(h('div', { class: 'card stack' }, h('div', { class: 'row between' }, h('div', { class: 'tiny' }, SCALES[scale].name + ' · ' + key), h('div', { class: 'small muted' }, 'gold = root')), fbHolder));
+    root.appendChild(h('div', { class: 'card stack center' },
+      h('div', { class: 'row', style: { justifyContent: 'center' } }, recBtn),
+      h('div', { class: 'row' }, recTime, meter),
+      recStatus,
+      opts.footer || null));
+    renderFretboard();
+  }
+  render();
+  root.cleanup = () => { cancelAnimationFrame(meterRAF); if (AudioEngine.isRecording()) AudioEngine.stopRecording(); AudioEngine.stopBacking(); AudioEngine.closeInput(); };
+  return root;
+}
+
+// ---------- Ear training ----------
+function makeEarQuestion(level) {
+  const now = () => AudioEngine.now() + 0.05;
+  if (level === 1 || level === 2) {
+    const types = level === 1 ? ['maj', 'min'] : ['maj', 'min', 'dom7', 'maj7', 'm7'];
+    const type = pick(types), rootPc = randInt(0, 11);
+    const vox = chordVoicing(rootPc, type);
+    const playFn = () => { const t = now(); AudioEngine.strum(vox, t, { gain: 0.3, spread: 0.03 }); vox.forEach((m, i) => AudioEngine.pluck(m, t + 1.3 + i * 0.22, { gain: 0.25, dur: 1.6 })); };
+    const label = t => CHORD_TYPES[t].name;
+    return { level, prompt: level === 1 ? 'Major or minor?' : 'Which chord type?', play: playFn, options: types.map(label), answer: label(type),
+      accept: v => matchChordType(v) === type, reveal: `${chordName(rootPc, type)} (${label(type)})` };
+  }
+  if (level === 3) {
+    const pool = EAR_INTERVAL_SET.slice(0, Store.state.ear.typed[3] ? 9 : 7);
+    const iv = pick(pool), r = randInt(48, 60);
+    const info = INTERVALS.find(x => x.semi === iv);
+    const playFn = () => { const t = now(); AudioEngine.pluck(r, t, { gain: 0.4 }); AudioEngine.pluck(r + iv, t + 0.7, { gain: 0.4 }); AudioEngine.pluck(r, t + 1.6, { gain: 0.3 }); AudioEngine.pluck(r + iv, t + 1.6, { gain: 0.3 }); };
+    const opts = shuffle([iv, ...shuffle(pool.filter(x => x !== iv)).slice(0, 3)]).map(x => INTERVALS.find(y => y.semi === x).name);
+    return { level, prompt: 'Which interval?', play: playFn, options: opts, answer: info.name, accept: v => matchInterval(v) === iv, reveal: `${info.name} (${iv} half steps)` };
+  }
+  if (level === 4) {
+    const ref = 57; // A3
+    const off = randInt(1, 11), pc = mod12(9 + off);
+    const playFn = () => { const t = now(); AudioEngine.pluck(ref, t, { gain: 0.4 }); AudioEngine.pluck(ref + off, t + 1.0, { gain: 0.45 }); };
+    const opts = shuffle([pc, ...shuffle([...Array(12).keys()].filter(x => x !== pc && x !== 9)).slice(0, 3)]).map(bothNames);
+    return { level, prompt: 'First note is A. What is the second note?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: bothNames(pc), refBtn: () => AudioEngine.pluck(ref, AudioEngine.now(), { gain: 0.4 }) };
+  }
+  // level 5: progressions
+  const prog = pick(PROGRESSIONS), keyPc = randInt(0, 11);
+  const playFn = () => { const t = now(); prog.steps.forEach(([o, ty], i) => AudioEngine.strum(chordVoicing(mod12(keyPc + o), ty), t + i * 1.1, { gain: 0.28, spread: 0.025, cut: 1.0 })); };
+  const opts = shuffle([prog, ...shuffle(PROGRESSIONS.filter(p => p !== prog)).slice(0, 3)]).map(p => p.name);
+  return { level, prompt: 'Which progression?', play: playFn, options: opts, answer: prog.name,
+    accept: v => normProg(v) === normProg(prog.name), reveal: prog.name + ' in ' + noteName(keyPc) };
+}
+function matchChordType(v) {
+  const x = v.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const map = { major: 'maj', maj: 'maj', minor: 'min', min: 'min', m: 'min', dominant7: 'dom7', dom7: 'dom7', dominant: 'dom7', '7': 'dom7', seventh: 'dom7', major7: 'maj7', maj7: 'maj7', majorseventh: 'maj7', minor7: 'm7', min7: 'm7', m7: 'm7', minorseventh: 'm7' };
+  if (v.trim() === 'M7') return 'maj7';
+  if (v.trim() === 'M') return 'maj';
+  return map[x] || null;
+}
+function matchInterval(v) {
+  const raw = v.trim();
+  const ex = INTERVALS.find(i => i.short === raw || i.short.toLowerCase() === raw.toLowerCase() && raw[0].toLowerCase() === 'p');
+  if (ex) return ex.semi;
+  let x = raw.toLowerCase().replace('second', '2nd').replace('third', '3rd').replace('fourth', '4th').replace('fifth', '5th').replace('sixth', '6th').replace('seventh', '7th').replace(/\s+/g, '');
+  const f = INTERVALS.find(i => i.name.toLowerCase().replace(/\s+/g, '') === x);
+  return f ? f.semi : null;
+}
+function normProg(v) { return v.replace(/[^IViv°]/g, ''); }
+
+function EarRun({ levels, count = 10, daily = false, onDone }) {
+  const root = h('div', { class: 'stack' });
+  let n = 0, correct = 0;
+  function nextQ() {
+    if (n >= count) return finish();
+    const level = pick(levels);
+    const q = makeEarQuestion(level);
+    const typed = Store.state.ear.typedAvail?.[level] && Store.state.ear.typed[level];
+    root.innerHTML = '';
+    root.appendChild(h('div', { class: 'row between' }, h('div', { class: 'tiny' }, `${daily ? 'Daily ear challenge' : 'Ear practice'} · ${n + 1}/${count}`), h('div', { class: 'badge' }, `L${level} · ${correct} ✓`)));
+    let answered = false;
+    const fbBox = h('div');
+    function result(ok, chosenBtn) {
+      if (answered) return; answered = true;
+      if (ok) correct++;
+      earRecord(level, ok);
+      fbBox.appendChild(h('div', { class: 'feedback ' + (ok ? 'ok' : 'no') }, h('b', null, ok ? 'Yes! ' : 'Answer: '), q.reveal));
+      fbBox.appendChild(h('div', { class: 'row', style: { marginTop: '10px' } },
+        h('button', { class: 'btn grow', onclick: () => q.play() }, 'Hear again'),
+        h('button', { class: 'btn primary grow', onclick: () => { n++; nextQ(); } }, 'Next')));
+    }
+    const card = h('div', { class: 'card stack center' },
+      h('h2', null, q.prompt),
+      h('div', { class: 'row', style: { justifyContent: 'center' } },
+        h('button', { class: 'btn primary big', onclick: () => { AudioEngine.ensure(); q.play(); } }, icon('play', 20), ' Play'),
+        q.refBtn ? h('button', { class: 'btn big', onclick: q.refBtn }, 'A') : null));
+    root.appendChild(card);
+    if (typed) {
+      const inp = h('input', { placeholder: level === 3 ? 'e.g. minor 3rd, P5' : level === 4 ? 'e.g. C#' : level === 5 ? 'e.g. I V vi IV' : 'e.g. minor, maj7', autocapitalize: 'off', autocomplete: 'off' });
+      root.appendChild(h('form', { class: 'row', onsubmit: e => { e.preventDefault(); if (!inp.value.trim()) return; result(q.accept(inp.value)); } }, inp, h('button', { class: 'btn primary', type: 'submit' }, 'OK')));
+      root.appendChild(h('p', { class: 'muted small center' }, 'Typed mode is on. You can turn it off in the Ear tab.'));
+    } else {
+      const list = h('div', { class: 'col' });
+      q.options.forEach(o => list.appendChild(h('button', { class: 'option', onclick: e => {
+        if (answered) return;
+        const ok = o === q.answer;
+        e.target.classList.add(ok ? 'right' : 'wrong');
+        if (!ok) [...list.children].forEach(b => { if (b.textContent === q.answer) b.classList.add('right'); });
+        result(ok);
+      } }, o)));
+      root.appendChild(list);
+    }
+    root.appendChild(fbBox);
+    setTimeout(() => { try { q.play(); } catch (e) {} }, 250);
+  }
+  function finish() {
+    root.innerHTML = '';
+    let xp = correct;
+    if (daily && Store.state.ear.dailyDate !== todayStr()) { xp += 15; Store.state.ear.dailyDate = todayStr(); Store.state.ear.dailyScore = correct; Store.save(); }
+    root.appendChild(h('div', { class: 'card center stack' },
+      h('div', { style: { fontSize: '48px' } }, correct >= count * 0.8 ? '👂✨' : '👂'),
+      h('h2', null, `${correct} / ${count}`),
+      h('p', { class: 'muted' }, daily ? 'Daily challenge done. Come back tomorrow for a new one.' : 'Nice practice.'),
+      h('button', { class: 'btn primary block', onclick: () => onDone && onDone(correct) }, 'Done')));
+    if (xp) addXP(xp, daily ? 'Daily ear challenge' : 'Ear practice');
+  }
+  root.start = () => { AudioEngine.ensure(); nextQ(); };
+  return root;
+}
+
+// ---------- Screens ----------
+function dailySeed() { let x = 0; for (const c of todayStr()) x = (x * 31 + c.charCodeAt(0)) >>> 0; return x; }
+function todaysChallenge() {
+  const seed = dailySeed();
+  const ch = CHALLENGES[seed % CHALLENGES.length];
+  const styles = Object.keys(AudioEngine.STYLES).filter(k => k !== 'metronome' && styleUnlocked(k));
+  const style = styles[(seed >> 3) % styles.length];
+  const key = ch.randomKey ? ['F#','Bb','Eb','C#','Ab','B','F'][(seed >> 5) % 7] : ['A','E','G','D','C'][(seed >> 5) % 5];
+  return { ch, cfg: { style, key, bpm: ch.bpm || AudioEngine.STYLES[style].bpm, prompt: ch.text, challenge: ch.title, target: !!ch.target, tone: ch.toneHint, title: 'Challenge: ' + ch.title } };
+}
+
+function topBar(title, { back, right } = {}) {
+  return h('div', { class: 'topbar' },
+    h('div', { class: 'row grow' },
+      back ? h('button', { class: 'iconbtn', onclick: back, 'aria-label': 'Back' }, icon('back')) : null,
+      h('h1', { class: 'grow', style: back ? { fontSize: '22px' } : null }, title)),
+    right || null);
+}
+function levelChip() {
+  const li = levelInfo();
+  return h('button', { class: 'levelchip', onclick: () => App.go('progress') }, h('span', { class: 'lv' }, li.lvl), `${Store.state.xp} XP`);
+}
+function weekDots() {
+  const goal = Store.state.settings.weeklyGoal, done = sessionsThisWeek();
+  const n = Math.max(goal, done);
+  return h('div', { class: 'weekdots' }, Array.from({ length: n }, (_, i) => h('i', { class: i < done ? 'on' : '' }, i < done ? '✓' : '')));
+}
+
+// ---------- HOME ----------
+function HomeView() {
+  const st = Store.state;
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Woodshed', { right: levelChip() }));
+
+  const days = daysSinceLastSession();
+  const done = sessionsThisWeek(), goal = st.settings.weeklyGoal;
+  let greet;
+  if (days === null) greet = 'Welcome! Tap Play and the app will give you something to do.';
+  else if (done >= goal) greet = `Week goal reached 🎉 Anything extra is a bonus.`;
+  else if (days >= 4) greet = `It’s been ${days} days. Your guitar misses you, even 10 minutes counts!`;
+  else greet = `${goal - done} session${goal - done > 1 ? 's' : ''} left to hit this week’s goal.`;
+
+  let minutes = st.lastMinutes || 20;
+  let mode = st.homeMode || 'play';
+  const nl = nextLesson();
+  const hero = h('div', { class: 'card hero stack' });
+  function renderHero() {
+    hero.innerHTML = '';
+    const seg = h('div', { class: 'seg' },
+      h('button', { class: mode === 'play' ? 'on' : '', onclick: () => { mode = 'play'; st.homeMode = mode; Store.save(); renderHero(); } }, '🎸 Let’s play'),
+      h('button', { class: mode === 'browse' ? 'on' : '', onclick: () => { mode = 'browse'; st.homeMode = mode; Store.save(); renderHero(); } }, '👀 Just dropping by'));
+    hero.appendChild(seg);
+    if (mode === 'play') {
+      const durChips = h('div', { class: 'chips' });
+      [10, 20, 40].forEach(m => durChips.appendChild(h('button', { class: 'chip' + (m === minutes ? ' on' : ''), onclick: () => { minutes = m; st.lastMinutes = m; Store.save(); renderHero(); } }, `${m} min`)));
+      hero.append(
+        h('div', { class: 'tiny', style: { color: 'var(--accent2)' } }, 'How much time do you have?'),
+        durChips,
+        h('button', { class: 'btn primary big block', onclick: () => App.go('session', { minutes }) }, icon('play', 22), ' Play'),
+        h('p', { class: 'small muted' }, nl ? `Next up: ${nl.chapter.title} › ${nl.title}` : 'All lessons done: sessions will mix reviews and jams.'));
+    } else {
+      const earDone = st.ear.dailyDate === todayStr();
+      const due = srsDue().length;
+      const tiles = [
+        ['👂', 'Ear quiz', earDone ? 'done today ✓' : '+15 XP', () => App.go('earRun', { daily: !earDone })],
+        ['🎙️', 'My takes', 'listen back', () => App.go('journal')],
+        ['🎛️', 'Free jam', 'backing tracks', () => App.go('studio')],
+        ['📖', 'Lessons', due ? `${due} to review` : 'browse', () => App.go(due >= 3 ? 'review' : 'learn')],
+        ['🎁', 'Surprise', st.surpriseDone === todayStr() ? 'done ✓' : '+25 XP', () => App.go('challenge')],
+        ['📈', 'Progress', `level ${levelInfo().lvl}`, () => App.go('progress')],
+      ];
+      hero.append(
+        h('div', { class: 'tiny', style: { color: 'var(--accent2)' } }, 'No pressure. Pick anything:'),
+        h('div', { class: 'tiles' }, tiles.map(([e, t, sub, fn]) => h('button', { class: 'tile', onclick: fn }, h('span', { class: 'bubble' }, e), h('b', null, t), h('small', null, sub)))),
+        h('p', { class: 'small muted' }, 'Dropping by doesn’t count as a session, but quizzes and challenges still give XP.'));
+    }
+  }
+  renderHero();
+  root.appendChild(hero);
+
+  root.appendChild(h('div', { class: 'card stack' },
+    h('div', { class: 'row between' }, h('div', null, h('div', { class: 'tiny' }, 'This week'), h('h3', null, `${done} / ${goal} sessions`)),
+      h('div', { class: 'badge accent' }, `🔥 ${weekStreak()} week streak`)),
+    weekDots(),
+    h('p', { class: 'small muted' }, greet)));
+
+  const due = srsDue();
+  if (due.length >= 3) root.appendChild(h('div', { class: 'card tap row', onclick: () => App.go('review') },
+    h('div', { style: { fontSize: '26px' } }, '🔁'), h('div', { class: 'grow' }, h('h3', null, `${due.length} cards to review`), h('p', { class: 'small muted' }, 'Quick quiz on things you’re forgetting.')), icon('back', 18)));
+
+  const earDone = st.ear.dailyDate === todayStr();
+  root.appendChild(h('div', { class: 'card tap row' + (earDone ? ' dim' : ''), onclick: () => App.go('earRun', { daily: true }) },
+    h('div', { style: { fontSize: '26px' } }, '👂'),
+    h('div', { class: 'grow' }, h('h3', null, 'Daily ear challenge'), h('p', { class: 'small muted' }, earDone ? `Done today: ${st.ear.dailyScore}/10. New one tomorrow.` : '2 minutes, no guitar needed. +15 XP bonus.')),
+    earDone ? h('span', { class: 'badge good' }, '✓') : h('span', { class: 'badge accent' }, '+15')));
+
+  const { ch } = todaysChallenge();
+  const chDone = st.surpriseDone === todayStr();
+  root.appendChild(h('div', { class: 'card tap row' + (chDone ? ' dim' : ''), onclick: () => App.go('challenge') },
+    h('div', { style: { fontSize: '26px' } }, '🎁'),
+    h('div', { class: 'grow' }, h('div', { class: 'tiny' }, 'Surprise of the day'), h('h3', null, ch.title), h('p', { class: 'small muted' }, chDone ? 'Done! A new surprise tomorrow.' : ch.text)),
+    chDone ? h('span', { class: 'badge good' }, '✓') : h('span', { class: 'badge accent' }, '+25')));
+
+  // next unlock
+  const nextUnlock = Object.values(AudioEngine.STYLES).filter(s => s.xp > st.xp).sort((a, b) => a.xp - b.xp)[0];
+  if (nextUnlock) {
+    const prevXp = Math.max(0, ...Object.values(AudioEngine.STYLES).filter(s => s.xp <= st.xp).map(s => s.xp));
+    root.appendChild(h('div', { class: 'card stack' },
+      h('div', { class: 'row between' }, h('div', { class: 'tiny' }, 'Next unlock'), h('span', { class: 'small muted' }, `${st.xp} / ${nextUnlock.xp} XP`)),
+      h('h3', null, `🎵 ${nextUnlock.name} backing track`),
+      h('div', { class: 'bar' }, h('i', { style: { width: Math.round(100 * (st.xp - prevXp) / (nextUnlock.xp - prevXp)) + '%' } }))));
+  }
+  return root;
+}
+
+// ---------- SESSION ----------
+function SessionView({ minutes }) {
+  const st = Store.state;
+  const fresh = nextLesson();
+  const lesson = fresh || pick(ALL_LESSONS);
+  const due = srsDue();
+  const durs = [Math.max(2, Math.round(minutes * 0.25)), Math.max(4, Math.round(minutes * 0.35))];
+  durs.push(Math.max(4, minutes - durs[0] - durs[1]));
+  const names = ['Theory', 'On the neck', 'Improvise & record'];
+  let idx = 0, blockStart = Date.now(), child = null, tmr = null;
+  const startedAt = Date.now();
+  const root = h('div', { class: 'stack' });
+  const head = h('div', { class: 'stack' });
+  const body = h('div');
+  root.append(head, body);
+
+  function header() {
+    head.innerHTML = '';
+    const left = durs[idx] * 60 - (Date.now() - blockStart) / 1000;
+    head.append(
+      h('div', { class: 'row between' },
+        h('button', { class: 'iconbtn', onclick: exit, 'aria-label': 'Exit' }, icon('close')),
+        h('div', { class: 'center grow' }, h('div', { class: 'tiny' }, `Block ${Math.min(idx + 1, 3)} of 3 · ${minutes} min session`), h('h3', null, idx < 3 ? names[idx] : 'Session complete')),
+        h('div', { class: 'timer', style: { minWidth: '44px', textAlign: 'right', color: left < 0 ? 'var(--accent)' : 'var(--text)' } }, idx < 3 ? (left > 0 ? fmtTime(left) : '⏰') : '')),
+      h('div', { class: 'blockhead' }, [0, 1, 2].map(i => h('i', { class: i < idx ? 'done' : i === idx ? 'on' : '' }))),
+      ...(idx < 3 && left < 0 ? [h('p', { class: 'small center', style: { color: 'var(--accent)' } }, 'Time’s up for this block. Move on when you’re ready.')] : []));
+  }
+  async function exit() {
+    if (await UI.confirm('Leave this session?', 'It won’t count toward your weekly goal.', 'Leave', true)) { cleanup(); App.go('home'); }
+  }
+  function cleanup() { clearInterval(tmr); child && child.cleanup && child.cleanup(); }
+  function nextBlock() { child && child.cleanup && child.cleanup(); idx++; blockStart = Date.now(); render(); window.scrollTo(0, 0); }
+
+  function render() {
+    header();
+    body.innerHTML = '';
+    if (idx === 0) {
+      const intro = h('div', { class: 'stack' },
+        h('div', { class: 'card stack' }, h('div', { class: 'tiny' }, fresh ? 'New lesson' : 'Review'), h('h2', null, fresh ? lesson.title : 'Refresh what you learned'), h('p', { class: 'small muted' }, `${lesson.chapter.icon} ${lesson.chapter.title}`)));
+      const reviewIds = fresh ? null : (due.length ? due.slice(0, 6) : lesson.quiz.map(q => q.id));
+      child = LessonPlayer(lesson, { review: reviewIds, onDone: nextBlock, doneLabel: 'Next block →' });
+      intro.appendChild(child);
+      body.appendChild(intro);
+    } else if (idx === 1) {
+      const p = lesson.practice;
+      child = p.type === 'game' ? GameView(p, nextBlock) : DrillView(p, lesson.id, nextBlock);
+      body.appendChild(child);
+    } else if (idx === 2) {
+      const finishNoRec = h('button', { class: 'btn ghost block small', onclick: async () => {
+        if (await UI.confirm('Finish without a recording?', 'You get a little XP, but the session won’t count for your weekly goal. A recording is your proof!', 'Finish anyway')) complete(false);
+      } }, 'Finish without recording');
+      child = StudioView({ ...lesson.jam, lessonId: lesson.id, title: `${lesson.title}: jam` }, { mode: 'session', onSaved: () => complete(true), footer: finishNoRec });
+      body.appendChild(child);
+    } else {
+      body.appendChild(summary);
+    }
+  }
+  let summary = null;
+  function complete(counted) {
+    child && child.cleanup && child.cleanup();
+    clearInterval(tmr);
+    const realMin = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
+    st.sessions.push({ date: new Date().toISOString(), minutes: realMin, lessonId: lesson.id, counted });
+    Store.save();
+    const wk = weekKey();
+    const reached = counted && sessionsThisWeek() >= st.settings.weeklyGoal && !st.weekBonus[wk];
+    idx = 3;
+    summary = h('div', { class: 'card center stack' },
+      h('div', { style: { fontSize: '56px' } }, counted ? '🎸' : '👋'),
+      h('h1', null, counted ? 'Session done!' : 'See you soon'),
+      h('p', { class: 'muted' }, counted ? `${realMin} minute${realMin > 1 ? 's' : ''} of real practice. Your take is in the Journal.` : 'Next time, record a take so it counts.'),
+      h('div', { class: 'row', style: { justifyContent: 'center' } }, weekDots()),
+      h('p', { class: 'small muted' }, `${sessionsThisWeek()} / ${st.settings.weeklyGoal} this week · 🔥 ${weekStreak()} week streak`),
+      h('button', { class: 'btn primary block', onclick: () => App.go('home') }, 'Back home'));
+    render();
+    addXP(counted ? 40 + realMin : 10, counted ? 'Session complete' : 'Session');
+    if (reached) { st.weekBonus[wk] = true; Store.save(); setTimeout(() => { addXP(40, 'Weekly goal'); UI.celebrate('Week goal reached!', `+40 XP bonus. ${weekStreak()} week streak.`, '🔥'); }, 900); }
+  }
+  render();
+  tmr = setInterval(() => { if (idx < 3) header(); }, 1000);
+  root.cleanup = cleanup;
+  return root;
+}
+
+// ---------- LEARN ----------
+function LearnView() {
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Learn', { right: levelChip() }));
+  const due = srsDue();
+  if (due.length) root.appendChild(h('div', { class: 'card tap row', onclick: () => App.go('review') },
+    h('div', { style: { fontSize: '26px' } }, '🔁'), h('div', { class: 'grow' }, h('h3', null, `Review (${due.length})`), h('p', { class: 'small muted' }, 'Spaced repetition: what you miss comes back more often.'))));
+  CHAPTERS.forEach((ch, i) => {
+    const unlocked = (chapterUnlocked(i) || (Store.state.skipped || {})[ch.id]) && !ch.soon;
+    const p = chapterProgress(ch);
+    root.appendChild(h('div', { class: 'card chapter tap' + (unlocked ? '' : ' dim'), onclick: () => {
+      if (ch.soon) return UI.toast('Coming in a future version');
+      if (!unlocked) {
+        UI.confirm('Skip ahead?', 'This chapter normally opens when you finish half of the previous one. Already know that stuff? You can open it now.', 'Open it').then(ok => { if (ok) { Store.state.skipped = { ...(Store.state.skipped || {}), [ch.id]: true }; Store.save(); App.go('chapter', { id: ch.id }); } });
+        return;
+      }
+      App.go('chapter', { id: ch.id });
+    } },
+      h('div', { class: 'row' }, h('div', { class: 'num' }, unlocked ? ch.icon : '🔒'),
+        h('div', { class: 'grow' }, h('div', { class: 'tiny' }, `Chapter ${i + 1}`), h('h3', null, ch.title), h('p', { class: 'small muted' }, ch.blurb))),
+      ch.soon ? h('div', { class: 'badge', style: { marginTop: '10px' } }, 'Coming soon') :
+        h('div', { class: 'row', style: { marginTop: '12px' } }, h('div', { class: 'bar good grow' }, h('i', { style: { width: (p.total ? 100 * p.done / p.total : 0) + '%' } })), h('span', { class: 'small muted' }, `${p.done}/${p.total}`))));
+  });
+  return root;
+}
+function ChapterView({ id }) {
+  const ch = CHAPTERS.find(c => c.id === id);
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar(ch.title, { back: () => App.go('learn') }));
+  root.appendChild(h('p', { class: 'muted' }, ch.blurb));
+  root.appendChild(h('div', { class: 'card' }, ch.lessons.map((l, i) => {
+    const done = !!Store.state.lessonsDone[l.id];
+    return h('div', { class: 'lessonrow tap', style: { cursor: 'pointer' }, onclick: () => App.go('lesson', { id: l.id }) },
+      h('div', { class: 'check' + (done ? ' on' : '') }, done ? '✓' : i + 1),
+      h('div', { class: 'grow' }, h('h3', null, l.title), h('p', { class: 'small muted' }, `${l.cards.length} cards · ${l.quiz.length} questions · ${l.practice.type === 'game' ? 'game' : 'drill'}`)),
+      icon('back', 16));
+  })));
+  return root;
+}
+function LessonView({ id }) {
+  const l = LESSON_BY_ID[id];
+  let tab = 'learn', child = null;
+  const root = h('div', { class: 'stack' });
+  const body = h('div');
+  const seg = h('div', { class: 'chips' });
+  function render() {
+    child && child.cleanup && child.cleanup();
+    seg.innerHTML = '';
+    [['learn', 'Learn'], ['practice', 'Practice'], ['jam', 'Jam']].forEach(([k, lbl]) => seg.appendChild(h('button', { class: 'chip' + (tab === k ? ' on' : ''), onclick: () => { tab = k; render(); } }, lbl)));
+    body.innerHTML = '';
+    if (tab === 'learn') child = LessonPlayer(l, { onDone: () => { tab = 'practice'; render(); }, doneLabel: 'Practice it →' });
+    else if (tab === 'practice') child = l.practice.type === 'game' ? GameView(l.practice, () => { tab = 'jam'; render(); }) : DrillView(l.practice, l.id, () => { tab = 'jam'; render(); });
+    else child = StudioView({ ...l.jam, lessonId: l.id, title: `${l.title}: jam` }, { mode: 'lesson' });
+    body.appendChild(child);
+  }
+  root.append(topBar(l.title, { back: () => { child && child.cleanup && child.cleanup(); App.go('chapter', { id: l.chapter.id }); } }), seg, body);
+  render();
+  root.cleanup = () => child && child.cleanup && child.cleanup();
+  return root;
+}
+function ReviewView() {
+  const due = srsDue().slice(0, 10);
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Review', { back: () => App.go('learn') }));
+  if (!due.length) { root.appendChild(h('div', { class: 'card center' }, h('p', null, 'Nothing to review right now 🎉'))); return root; }
+  const fakeLesson = { title: 'Review', cards: [], quiz: [] };
+  root.appendChild(LessonPlayer(fakeLesson, { review: due, onDone: () => App.go('home'), doneLabel: 'Done' }));
+  return root;
+}
+
+// ---------- EAR ----------
+function EarView() {
+  const st = Store.state;
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Ear training', { right: levelChip() }));
+  const earDone = st.ear.dailyDate === todayStr();
+  root.appendChild(h('div', { class: 'card hero stack' },
+    h('div', { class: 'tiny', style: { color: 'var(--accent2)' } }, 'Daily challenge'),
+    h('h2', null, earDone ? `Done today: ${st.ear.dailyScore}/10` : '10 questions · ~2 min'),
+    h('p', { class: 'small muted' }, 'Mostly your current level, with some earlier ones mixed in. Use headphones or the Pulze.'),
+    h('button', { class: 'btn primary block', onclick: () => App.go('earRun', { daily: !earDone }) }, earDone ? 'Practice more' : 'Start (+15 XP)')));
+  EAR_LEVELS.forEach(L => {
+    const unlocked = L.id <= st.ear.unlocked;
+    const acc = earAccuracy(L.id);
+    const typedAvail = st.ear.typedAvail?.[L.id];
+    const card = h('div', { class: 'card stack' + (unlocked ? '' : ' dim') },
+      h('div', { class: 'row' },
+        h('div', { class: 'num', style: { width: '40px', height: '40px', borderRadius: '12px', background: 'var(--card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 } }, unlocked ? L.id : '🔒'),
+        h('div', { class: 'grow' }, h('h3', null, L.name), h('p', { class: 'small muted' }, L.desc)),
+        unlocked ? h('button', { class: 'btn sm', onclick: () => App.go('earRun', { levels: [L.id] }) }, 'Practice') : null),
+      unlocked ? h('div', { class: 'row' }, h('div', { class: 'bar good grow' }, h('i', { style: { width: (acc || 0) + '%' } })), h('span', { class: 'small muted' }, acc === null ? 'no data' : `${acc}% (last 20)`)) :
+        h('p', { class: 'small muted' }, 'Unlocks at 80% on the previous level (last 20 answers).'),
+      typedAvail ? h('div', { class: 'row between' }, h('span', { class: 'small' }, '⌨️ Typed answers (harder)'), toggleEl(!!st.ear.typed[L.id], v => { st.ear.typed[L.id] = v; Store.save(); })) :
+        (unlocked ? h('p', { class: 'small muted' }, 'Typed answers unlock at 80% here.') : null));
+    root.appendChild(card);
+  });
+  return root;
+}
+function EarRunView({ daily = false, levels }) {
+  const st = Store.state;
+  let lv = levels;
+  if (!lv) { const u = st.ear.unlocked; lv = u === 1 ? [1] : [u, u, u, u - 1, Math.max(1, u - 2)]; }
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar(daily ? 'Daily ear challenge' : 'Ear practice', { back: () => App.go('ear') }));
+  const run = EarRun({ levels: lv, count: 10, daily, onDone: () => App.go(daily ? 'home' : 'ear') });
+  root.appendChild(h('div', { class: 'card stack center' }, h('div', { style: { fontSize: '48px' } }, '🎧'), h('p', { class: 'muted' }, 'Each question plays automatically. You can replay it as often as you like.'),
+    h('button', { class: 'btn primary big block', onclick: e => { e.currentTarget.parentElement.remove(); root.appendChild(run); run.start(); } }, 'Start')));
+  return root;
+}
+
+// ---------- STUDIO / CHALLENGE ----------
+function StudioScreen() {
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Studio', { right: levelChip() }));
+  const sv = StudioView({}, { mode: 'studio' });
+  root.appendChild(sv);
+  root.cleanup = sv.cleanup;
+  return root;
+}
+function ChallengeView() {
+  const { cfg } = todaysChallenge();
+  const root = h('div', { class: 'stack' });
+  let sv;
+  root.appendChild(topBar('Surprise', { back: () => { sv.cleanup(); App.go('home'); } }));
+  sv = StudioView(cfg, { mode: 'challenge', onSaved: () => {
+    if (Store.state.surpriseDone !== todayStr()) { Store.state.surpriseDone = todayStr(); Store.save(); addXP(25, 'Surprise challenge'); }
+  } });
+  root.appendChild(sv);
+  root.cleanup = sv.cleanup;
+  return root;
+}
+
+// ---------- JOURNAL ----------
+function JournalView() {
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Journal', { right: levelChip() }));
+  const list = h('div', { class: 'list' }, h('p', { class: 'muted' }, 'Loading…'));
+  let filter = 'all', compare = false, selected = [];
+  const player = new Audio();
+  let playingId = null, urlCache = {};
+  const filters = h('div', { class: 'chips' });
+  const cmpPanel = h('div');
+  root.append(filters, cmpPanel, list);
+  let recs = [];
+
+  function urlFor(r) { return urlCache[r.id] || (urlCache[r.id] = URL.createObjectURL(r.blob)); }
+  function renderFilters() {
+    filters.innerHTML = '';
+    [['all', 'All'], ['fav', '♥ Favourites'], ['session', 'Sessions'], ['challenge', 'Challenges']].forEach(([k, l]) =>
+      filters.appendChild(h('button', { class: 'chip' + (filter === k ? ' on' : ''), onclick: () => { filter = k; renderList(); renderFilters(); } }, l)));
+    filters.appendChild(h('button', { class: 'chip' + (compare ? ' on' : ''), onclick: () => { compare = !compare; selected = []; renderFilters(); renderList(); renderCompare(); } }, '⇄ Then vs now'));
+  }
+  function play(r, btn, seekBar) {
+    if (playingId === r.id && !player.paused) { player.pause(); return; }
+    player.src = urlFor(r); playingId = r.id;
+    player.play().catch(e => UI.toast('Playback failed: ' + e.message));
+    document.querySelectorAll('.rec .play').forEach(b => { b.innerHTML = ''; b.appendChild(icon('play', 20)); });
+    btn.innerHTML = ''; btn.appendChild(icon('pause', 20));
+    player.ontimeupdate = () => { seekBar.style.width = (100 * player.currentTime / (player.duration && isFinite(player.duration) ? player.duration : r.duration)) + '%'; };
+    player.onpause = player.onended = () => { btn.innerHTML = ''; btn.appendChild(icon('play', 20)); };
+  }
+  function renderCompare() {
+    cmpPanel.innerHTML = '';
+    if (!compare) return;
+    const [a, b] = selected.map(id => recs.find(r => r.id === id));
+    cmpPanel.appendChild(h('div', { class: 'card stack' },
+      h('div', { class: 'tiny' }, 'Then vs now'),
+      h('p', { class: 'small muted' }, a && b ? 'Listen to both and hear your progress.' : 'Select two takes below (ideally an old one and a recent one).'),
+      a && b ? h('div', { class: 'grid2' },
+        [a, b].map(r => { const sb = h('i'); const btn = h('button', { class: 'play', style: { margin: '0 auto' } }, icon('play', 20)); btn.onclick = () => play(r, btn, sb);
+          return h('div', { class: 'rec stat center stack' }, h('div', { class: 'tiny' }, fmtDate(r.createdAt)), h('div', { class: 'small' }, r.title), btn, h('div', { class: 'seek' }, sb)); })) : null));
+  }
+  function renderList() {
+    list.innerHTML = '';
+    let rs = recs;
+    if (filter === 'fav') rs = rs.filter(r => r.fav);
+    if (filter === 'session') rs = rs.filter(r => r.ctx?.source === 'session');
+    if (filter === 'challenge') rs = rs.filter(r => r.ctx?.source === 'challenge');
+    if (!rs.length) { list.appendChild(h('div', { class: 'card center stack' }, h('div', { style: { fontSize: '40px' } }, '🎙️'), h('p', { class: 'muted' }, recs.length ? 'Nothing here with this filter.' : 'No recordings yet. Play a session or open the Studio and hit record.'))); return; }
+    let lastMonth = '';
+    rs.forEach(r => {
+      const month = new Date(r.createdAt).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+      if (month !== lastMonth) { list.appendChild(h('div', { class: 'tiny', style: { marginTop: '16px' } }, month)); lastMonth = month; }
+      const seekBar = h('i');
+      const btn = h('button', { class: 'play', 'aria-label': 'Play' }, icon('play', 20));
+      btn.onclick = e => { e.stopPropagation(); play(r, btn, seekBar); };
+      const sel = selected.includes(r.id);
+      const card = h('div', { class: 'card rec' + (sel ? ' sel' : ''), onclick: () => {
+        if (!compare) return;
+        if (sel) selected = selected.filter(x => x !== r.id); else selected = [...selected, r.id].slice(-2);
+        renderList(); renderCompare();
+      } },
+        h('div', { class: 'row' }, btn,
+          h('div', { class: 'grow' }, h('h3', { style: { fontSize: '16px' } }, (r.fav ? '♥ ' : '') + r.title),
+            h('p', { class: 'small muted' }, `${fmtDate(r.createdAt)} · ${fmtTime(r.duration)}${r.ctx?.key ? ' · ' + r.ctx.key : ''}${r.ctx?.bpm ? ' · ' + r.ctx.bpm + ' BPM' : ''}`),
+            r.tone ? h('p', { class: 'small', style: { color: 'var(--accent2)' } }, '🎛 ' + r.tone) : null)),
+        h('div', { class: 'seek' }, seekBar),
+        compare ? h('p', { class: 'small', style: { marginTop: '8px', color: sel ? 'var(--blue)' : 'var(--muted)' } }, sel ? '✓ Selected for comparison' : 'Tap to select') :
+          h('div', { class: 'row', style: { marginTop: '10px', gap: '6px' } },
+            h('button', { class: 'btn sm', onclick: async () => { r.fav = !r.fav; await RecDB.put(r); renderList(); } }, r.fav ? '♥ Unfav' : '♡ Fav'),
+            h('button', { class: 'btn sm', onclick: async () => { const t = await UI.prompt('Rename take', r.title); if (t) { r.title = t; await RecDB.put(r); renderList(); } } }, 'Rename'),
+            h('button', { class: 'btn sm', onclick: () => shareRec(r) }, 'Share'),
+            h('div', { class: 'grow' }),
+            h('button', { class: 'btn sm danger', onclick: async () => { if (await UI.confirm('Delete this take?', `“${r.title}” will be gone for good.`, 'Delete', true)) { await RecDB.del(r.id); recs = recs.filter(x => x.id !== r.id); renderList(); } } }, 'Delete')));
+      list.appendChild(card);
+    });
+  }
+  async function shareRec(r) {
+    const ext = (r.mime || '').includes('mp4') ? 'm4a' : (r.mime || '').includes('ogg') ? 'ogg' : 'webm';
+    const name = r.title.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_') + '.' + ext;
+    const file = new File([r.blob], name, { type: r.mime || 'audio/mp4' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: r.title }); return; }
+    } catch (e) { if (e.name === 'AbortError') return; }
+    const a = h('a', { href: urlFor(r), download: name }); document.body.appendChild(a); a.click(); a.remove();
+  }
+  renderFilters();
+  RecDB.all().then(rs => { recs = rs; renderList(); }).catch(e => { list.innerHTML = ''; list.appendChild(h('p', { class: 'muted' }, 'Could not open storage: ' + e.message)); });
+  root.cleanup = () => { player.pause(); Object.values(urlCache).forEach(u => URL.revokeObjectURL(u)); };
+  return root;
+}
+
+// ---------- PROGRESS & SETTINGS ----------
+function ProgressView() {
+  const st = Store.state;
+  const li = levelInfo();
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Progress', { back: () => App.go('home') }));
+  const C = 2 * Math.PI * 52;
+  root.appendChild(h('div', { class: 'card row', style: { gap: '18px' } },
+    h('div', { class: 'ring' }, (() => { const sv = s('svg', { width: 120, height: 120, viewBox: '0 0 120 120' }, s('circle', { cx: 60, cy: 60, r: 52, fill: 'none', stroke: '#3a322b', 'stroke-width': 10 }), s('circle', { cx: 60, cy: 60, r: 52, fill: 'none', stroke: '#f2a541', 'stroke-width': 10, 'stroke-linecap': 'round', 'stroke-dasharray': `${C * li.into / li.need} ${C}` })); return sv; })(),
+      h('div', { class: 'lbl' }, h('div', { class: 'tiny' }, 'Level'), h('div', { style: { fontSize: '34px', fontWeight: 850 } }, li.lvl))),
+    h('div', { class: 'grow' }, h('h2', null, li.title), h('p', { class: 'small muted' }, `${st.xp} XP total · ${li.need - li.into} XP to level ${li.lvl + 1}`))));
+  const counted = st.sessions.filter(x => x.counted);
+  const mins = counted.reduce((a, b) => a + b.minutes, 0);
+  const lessonsDone = Object.keys(st.lessonsDone).length;
+  root.appendChild(h('div', { class: 'grid2' },
+    h('div', { class: 'stat' }, h('b', null, `🔥 ${weekStreak()}`), h('span', { class: 'small muted' }, 'week streak')),
+    h('div', { class: 'stat' }, h('b', null, `${sessionsThisWeek()}/${st.settings.weeklyGoal}`), h('span', { class: 'small muted' }, 'this week')),
+    h('div', { class: 'stat' }, h('b', null, counted.length), h('span', { class: 'small muted' }, 'sessions')),
+    h('div', { class: 'stat' }, h('b', null, `${Math.floor(mins / 60)}h${String(mins % 60).padStart(2, '0')}`), h('span', { class: 'small muted' }, 'practised')),
+    h('div', { class: 'stat' }, h('b', null, `${lessonsDone}/${ALL_LESSONS.length}`), h('span', { class: 'small muted' }, 'lessons')),
+    h('div', { class: 'stat' }, h('b', null, `L${st.ear.unlocked}`), h('span', { class: 'small muted' }, 'ear level'))));
+
+  root.appendChild(h('div', { class: 'card stack' }, h('div', { class: 'tiny' }, 'Backing tracks'),
+    Object.values(AudioEngine.STYLES).map(sv => h('div', { class: 'row between' }, h('span', null, (st.xp >= sv.xp ? '🎵 ' : '🔒 ') + sv.name), h('span', { class: 'small muted' }, st.xp >= sv.xp ? 'unlocked' : `${sv.xp} XP`)))));
+
+  // settings
+  const set = st.settings;
+  const goalChips = h('div', { class: 'chips' });
+  const renderGoal = () => { goalChips.innerHTML = ''; [1, 2, 3, 4].forEach(n => goalChips.appendChild(h('button', { class: 'chip' + (set.weeklyGoal === n ? ' on' : ''), onclick: () => { set.weeklyGoal = n; Store.save(); renderGoal(); } }, `${n}× / week`))); };
+  renderGoal();
+  const inputSel = h('select', { onchange: e => { set.inputId = e.target.value; Store.save(); } }, h('option', { value: '' }, 'Default input'));
+  async function fillInputs() {
+    const ins = await AudioEngine.listInputs();
+    inputSel.innerHTML = '';
+    inputSel.appendChild(h('option', { value: '' }, 'Default input (auto)'));
+    ins.forEach((d, i) => inputSel.appendChild(h('option', { value: d.deviceId, selected: d.deviceId === set.inputId ? true : null }, d.label || `Input ${i + 1}`)));
+  }
+  fillInputs();
+  const gainLbl = h('span', { class: 'small muted' }, `${Math.round(set.inputGain * 100)}%`);
+  const recLbl = h('span', { class: 'small muted' }, `${Math.round(set.backingInRec * 100)}%`);
+  root.appendChild(h('div', { class: 'card stack' },
+    h('div', { class: 'tiny' }, 'Weekly goal'), goalChips,
+    h('div', { class: 'hr' }),
+    h('div', { class: 'tiny' }, 'Audio input'), inputSel,
+    h('button', { class: 'btn sm', onclick: async () => { try { await AudioEngine.openInput(); AudioEngine.closeInput(); await fillInputs(); UI.toast('Inputs refreshed'); } catch (e) { UI.toast('Microphone access refused'); } } }, 'Detect inputs (asks for mic access)'),
+    h('div', { class: 'row between' }, h('span', null, 'Input level'), gainLbl),
+    h('input', { type: 'range', class: 'slider', min: 0.2, max: 3, step: 0.05, value: set.inputGain, oninput: e => { set.inputGain = +e.target.value; gainLbl.textContent = Math.round(set.inputGain * 100) + '%'; Store.save(); } }),
+    h('div', { class: 'row between' }, h('div', null, h('div', null, 'Backing track in recordings'), h('div', { class: 'small muted' }, 'Mix the backing into your takes')), toggleEl(set.includeBacking, v => { set.includeBacking = v; Store.save(); })),
+    h('div', { class: 'row between' }, h('span', null, 'Backing level in recordings'), recLbl),
+    h('input', { type: 'range', class: 'slider', min: 0.1, max: 1, step: 0.05, value: set.backingInRec, oninput: e => { set.backingInRec = +e.target.value; recLbl.textContent = Math.round(set.backingInRec * 100) + '%'; Store.save(); } }),
+    h('div', { class: 'row between' }, h('div', null, h('div', null, 'Hear my guitar through the app'), h('div', { class: 'small muted' }, 'Off with the Pulze (it already plays your guitar). Adds delay.')), toggleEl(set.monitor, v => { set.monitor = v; Store.save(); })),
+  ));
+
+  root.appendChild(h('div', { class: 'card stack help' },
+    h('div', { class: 'tiny' }, 'Recording with the Pulze Mini'),
+    h('p', { class: 'small' }, '1. Connect the Pulze Mini to the iPhone with a USB cable (USB-C iPhone: direct; Lightning iPhone: Apple “Lightning to USB 3 Camera Adapter”, powered).'),
+    h('p', { class: 'small' }, '2. The iPhone uses it automatically as its microphone and speaker. Plug headphones into the Pulze.'),
+    h('p', { class: 'small' }, '3. Allow microphone access the first time you hit record. If you don’t have the Pulze with you, the iPhone mic works too.'),
+    h('p', { class: 'small muted' }, 'Your recordings and progress are stored on this device only. Use “Share” on a take to keep a copy in Files or send it.')));
+
+  root.appendChild(h('div', { class: 'card stack' },
+    h('button', { class: 'btn block', onclick: async () => {
+      const txt = JSON.stringify({ ...st, exported: new Date().toISOString() });
+      try { await navigator.clipboard.writeText(txt); UI.toast('Progress copied to clipboard'); } catch (e) { UI.toast('Copy failed'); }
+    } }, 'Copy progress backup'),
+    h('button', { class: 'btn block', onclick: async () => {
+      const txt = await UI.prompt('Paste a progress backup', '', '{…}');
+      if (!txt) return;
+      try { const d = JSON.parse(txt); delete d.exported; Store.state = { ...defaultState(), ...d }; Store.save(); UI.toast('Progress restored'); App.go('progress'); } catch (e) { UI.toast('That doesn’t look like a backup'); }
+    } }, 'Restore progress backup'),
+    h('button', { class: 'btn danger block', onclick: async () => { if (await UI.confirm('Reset all progress?', 'XP, lessons and stats will be erased. Recordings stay in the Journal.', 'Reset', true)) { Store.reset(); App.go('home'); } } }, 'Reset progress'),
+    h('p', { class: 'tiny center' }, 'Woodshed v1.0')));
+  return root;
+}
+
+// ---------- App shell & router ----------
+const App = {
+  current: null, view: null,
+  tabs: [['home', 'Home', 'home'], ['learn', 'Learn', 'learn'], ['ear', 'Ear', 'ear'], ['studio', 'Studio', 'studio'], ['journal', 'Journal', 'journal']],
+  routes: {
+    home: { view: HomeView, tab: 'home' },
+    session: { view: SessionView, full: true },
+    learn: { view: LearnView, tab: 'learn' },
+    chapter: { view: ChapterView, tab: 'learn' },
+    lesson: { view: LessonView, tab: 'learn' },
+    review: { view: ReviewView, tab: 'learn' },
+    ear: { view: EarView, tab: 'ear' },
+    earRun: { view: EarRunView, tab: 'ear' },
+    studio: { view: StudioScreen, tab: 'studio' },
+    challenge: { view: ChallengeView, tab: 'home' },
+    journal: { view: JournalView, tab: 'journal' },
+    progress: { view: ProgressView, tab: 'home' },
+  },
+  go(name, params = {}) {
+    if (this.view && this.view.cleanup) { try { this.view.cleanup(); } catch (e) {} }
+    const r = this.routes[name] || this.routes.home;
+    this.current = name;
+    const app = document.getElementById('app');
+    app.innerHTML = '';
+    app.classList.toggle('fullscreen', !!r.full);
+    try { this.view = r.view(params); }
+    catch (e) { console.error(e); this.view = h('div', { class: 'card' }, h('h3', null, 'Something went wrong'), h('p', { class: 'small muted' }, String(e && e.stack || e))); }
+    app.appendChild(this.view);
+    this.renderTabs(r);
+    window.scrollTo(0, 0);
+  },
+  renderTabs(r) {
+    let bar = document.querySelector('.tabs');
+    if (r.full) { if (bar) bar.style.display = 'none'; return; }
+    if (!bar) { bar = h('nav', { class: 'tabs' }); document.body.appendChild(bar); }
+    bar.style.display = '';
+    bar.innerHTML = '';
+    this.tabs.forEach(([k, label, ic]) => bar.appendChild(h('button', { class: r.tab === k ? 'on' : '', onclick: () => this.go(k) }, icon(ic, 24), label)));
+  },
+};
+
+window.addEventListener('DOMContentLoaded', () => {
+  Store.load();
+  requestPersistence();
+  App.go('home');
+  try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {}
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+});
+
+</script>
+</body>
+</html>
