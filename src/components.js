@@ -514,9 +514,9 @@ function makeEarQuestion(level) {
     const others = shuffle(EAR_CHORD_POOL.filter(([r, ty]) => !(r === rootPc && ty === type))).slice(0, 3);
     const opts = shuffle([[rootPc, type], ...others]).map(([r, ty]) => chordName(r, ty));
     return { level, tag: 'Chord', prompt: 'Which chord is this?', play: playFn, options: opts, answer: chordName(rootPc, type),
-      accept: v => { const p = parseChord(v); return !!p && p.pc === rootPc && p.type === type; }, reveal: `${nm} (${CHORD_TYPES[type].name.toLowerCase()})`,
+      accept: v => { const p = parseChord(v); return !!p && p.pc === rootPc && p.type === type; }, reveal: fullChordName(rootPc, type, rootPc === 10),
       refBtn: () => AudioEngine.pluck(57, AudioEngine.now(), { gain: 0.4 }), refHint: 'Tap A to hear an A note for comparison.',
-      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type))) };
+      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type, { label: fullChordName(rootPc, type, rootPc === 10).replace(/ \(.*\)/, '') }))) };
   }
   if (level === 1 || level === 2) {
     const types = level === 1 ? ['maj', 'min'] : ['maj', 'min', 'dom7', 'maj7', 'm7'];
@@ -524,8 +524,8 @@ function makeEarQuestion(level) {
     const playFn = () => { const t = now(); const ms = playShape(rootPc, type, t); ms.forEach((m, i) => AudioEngine.pluck(m, t + 1.4 + i * 0.2, { gain: 0.25, dur: 1.6 })); };
     const label = t => CHORD_TYPES[t].name;
     return { level, prompt: level === 1 ? 'Major or minor?' : 'Which chord type?', play: playFn, options: types.map(label), answer: label(type),
-      accept: v => matchChordType(v) === type, reveal: `${chordName(rootPc, type)} (${label(type)})`,
-      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type))) };
+      accept: v => matchChordType(v) === type, reveal: fullChordName(rootPc, type),
+      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type, { label: fullChordName(rootPc, type, rootPc === 10).replace(/ \(.*\)/, '') }))) };
   }
   if (level === 3) {
     const pool = EAR_INTERVAL_SET.slice(0, Store.state.ear.typed[3] ? 9 : 7);

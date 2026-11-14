@@ -191,3 +191,9 @@ function spelledChordTones(rootName, type) {
   const iv = CHORD_TYPES[type].iv, st = [0, 2, 4, 6];
   return iv.map((s, i) => spell(rootName, s, st[i]));
 }
+
+// Full, unambiguous chord name: "F major", "F minor (Fm)", "F7 (dominant 7)"
+function fullChordName(rootPc, type, flats) {
+  const n = noteName(rootPc, flats), sym = n + CHORD_TYPES[type].sym;
+  return { maj: `${n} major`, min: `${n} minor (${sym})`, dim: `${n} diminished (${sym})`, dom7: `${sym} (dominant 7)`, maj7: `${sym} (major 7)`, m7: `${sym} (minor 7)` }[type];
+}
