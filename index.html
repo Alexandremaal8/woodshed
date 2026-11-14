@@ -1737,14 +1737,15 @@ function ChordDiagram(rootPc, type, opts = {}) {
   const maxF = played.length ? Math.max(...played) : 1;
   const start = maxF <= 4 ? 1 : minF;
   const nF = Math.max(4, maxF - start + 1);
-  const sw = opts.small ? 18 : 24, fh = opts.small ? 22 : 30, padX = 26, padT = 34;
-  const W = padX * 2 + sw * 5, H = padT + fh * nF + 14;
+  const sw = opts.small ? 18 : 24, fh = opts.small ? 22 : 30, padX = 34, padT = 34;
+  const W = padX * 2 + sw * 5, H = padT + fh * nF + 30;
   const svg = s('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
   const x = i => padX + i * sw, y = f => padT + (f - start + 0.5) * fh;
   svg.appendChild(s('rect', { x: x(0), y: padT, width: sw * 5, height: fh * nF, rx: 4, fill: '#2a1f17' }));
   for (let k = 0; k <= nF; k++) svg.appendChild(s('line', { x1: x(0), x2: x(5), y1: padT + k * fh, y2: padT + k * fh, stroke: k === 0 && start === 1 ? '#e8dcc8' : '#8a7a66', 'stroke-width': k === 0 && start === 1 ? 5 : 1.5 }));
   for (let i = 0; i < 6; i++) svg.appendChild(s('line', { x1: x(i), x2: x(i), y1: padT, y2: padT + fh * nF, stroke: '#cfc3b1', 'stroke-width': 1 + (5 - i) * 0.25 }));
-  if (start > 1) svg.appendChild(s('text', { x: x(5) + 8, y: y(start) + 4, 'font-size': 11, fill: '#f2a541', 'font-weight': 700 }, start + 'fr'));
+  for (let f = start; f < start + nF; f++) svg.appendChild(s('text', { x: x(0) - 22, y: y(f) + 4, 'font-size': 10, fill: f === start && start > 1 ? '#f2a541' : '#7a6d60', 'text-anchor': 'middle', 'font-weight': 700 }, f));
+  ['E','A','D','G','B','e'].forEach((l, i) => svg.appendChild(s('text', { x: x(i), y: padT + fh * nF + 18, 'font-size': 10, fill: '#a89a8b', 'text-anchor': 'middle', 'font-weight': 700 }, l)));
   if (barre && barre >= start) {
     const idx = frets.map((f, i) => f === barre ? i : -1).filter(i => i >= 0);
     if (idx.length > 1) svg.appendChild(s('rect', { x: x(idx[0]) - 9, y: y(barre) - 9, width: x(idx[idx.length - 1]) - x(idx[0]) + 18, height: 18, rx: 9, fill: '#f2a541' }));
