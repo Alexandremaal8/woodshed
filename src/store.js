@@ -12,7 +12,7 @@ function defaultState() {
     surpriseDone: null,      // date string
     weekBonus: {},           // weekKey -> true
     xpLog: [],
-    settings: { inputId: '', includeBacking: true, backingInRec: 0.55, weeklyGoal: 2, monitor: false, inputGain: 1 },
+    settings: { inputId: '', includeBacking: true, backingInRec: 0.55, weeklyGoal: 2, monitor: false, inputGain: 1, uiSounds: true },
     created: new Date().toISOString(),
   };
 }

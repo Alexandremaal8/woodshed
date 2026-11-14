@@ -276,15 +276,24 @@ function EarView() {
   root.appendChild(h('div', { class: 'card hero stack' },
     h('div', { class: 'tiny', style: { color: 'var(--accent2)' } }, 'Daily challenge'),
     h('h2', null, earDone ? `Done today: ${st.ear.dailyScore}/10` : '10 questions · ~2 min'),
-    h('p', { class: 'small muted' }, 'Your current level, some earlier ones, and single notes to name. Use headphones or the Pulze.'),
+    h('p', { class: 'small muted' }, 'Major/minor, chord names (G, A, Em…), single notes and your current level. Use headphones or the Pulze.'),
     h('button', { class: 'btn primary block', onclick: () => App.go('earRun', { daily: !earDone }) }, earDone ? 'Practice more' : 'Start (+15 XP)')));
+  const accC = earAccuracy('C');
+  root.appendChild(h('div', { class: 'card stack' },
+    h('div', { class: 'row' },
+      h('span', { class: 'bubble', style: { width: '44px', height: '44px', fontSize: '20px' } }, '🎸'),
+      h('div', { class: 'grow' }, h('h3', null, 'Name the chord'), h('p', { class: 'small muted' }, 'Common chords: C, D, E, F, G, A, B, Am, Em, Dm, Bm.')),
+      h('button', { class: 'btn sm', onclick: () => App.go('earRun', { levels: ['C'] }) }, 'Practice')),
+    h('div', { class: 'row' }, h('div', { class: 'bar good grow' }, h('i', { style: { width: (accC || 0) + '%' } })), h('span', { class: 'small muted' }, accC === null ? 'no data' : `${accC}% (last 20)`)),
+    st.ear.typedAvail?.['C'] ? h('div', { class: 'row between' }, h('span', { class: 'small' }, '⌨️ Typed answers (harder)'), toggleEl(!!st.ear.typed['C'], v => { st.ear.typed['C'] = v; Store.save(); })) : h('p', { class: 'small muted' }, 'Typed answers unlock at 80% here.')));
   const accN = earAccuracy('N');
   root.appendChild(h('div', { class: 'card stack' },
     h('div', { class: 'row' },
       h('span', { class: 'bubble', style: { width: '44px', height: '44px', fontSize: '20px' } }, '🎵'),
       h('div', { class: 'grow' }, h('h3', null, 'Name the note'), h('p', { class: 'small muted' }, 'A single note, no reference. The hardest one, and it’s fine to guess!')),
       h('button', { class: 'btn sm', onclick: () => App.go('earRun', { levels: ['N'] }) }, 'Practice')),
-    h('div', { class: 'row' }, h('div', { class: 'bar good grow' }, h('i', { style: { width: (accN || 0) + '%' } })), h('span', { class: 'small muted' }, accN === null ? 'no data' : `${accN}% (last 20)`))));
+    h('div', { class: 'row' }, h('div', { class: 'bar good grow' }, h('i', { style: { width: (accN || 0) + '%' } })), h('span', { class: 'small muted' }, accN === null ? 'no data' : `${accN}% (last 20)`)),
+    st.ear.typedAvail?.['N'] ? h('div', { class: 'row between' }, h('span', { class: 'small' }, '⌨️ Typed answers (harder)'), toggleEl(!!st.ear.typed['N'], v => { st.ear.typed['N'] = v; Store.save(); })) : h('p', { class: 'small muted' }, 'Typed answers unlock at 80% here.')));
   EAR_LEVELS.forEach(L => {
     const unlocked = L.id <= st.ear.unlocked;
     const acc = earAccuracy(L.id);
@@ -305,7 +314,7 @@ function EarView() {
 function EarRunView({ daily = false, levels }) {
   const st = Store.state;
   let lv = levels;
-  if (!lv) { const u = st.ear.unlocked; lv = u === 1 ? [1, 1, 'N'] : [u, u, u, u - 1, Math.max(1, u - 2), 'N', 'N']; }
+  if (!lv) { const u = st.ear.unlocked; lv = u === 1 ? [1, 1, 'C', 'C', 'N'] : [u, u, u - 1, Math.max(1, u - 2), 'C', 'C', 'N']; }
   const root = h('div', { class: 'stack' });
   root.appendChild(topBar(daily ? 'Daily ear challenge' : 'Ear practice', { back: () => App.go('ear') }));
   const run = EarRun({ levels: lv, count: 10, daily, onDone: () => App.go(daily ? 'home' : 'ear') });
@@ -476,6 +485,7 @@ function ProgressView() {
     h('div', { class: 'row between' }, h('div', null, h('div', null, 'Backing track in recordings'), h('div', { class: 'small muted' }, 'Mix the backing into your takes')), toggleEl(set.includeBacking, v => { set.includeBacking = v; Store.save(); })),
     h('div', { class: 'row between' }, h('span', null, 'Backing level in recordings'), recLbl),
     h('input', { type: 'range', class: 'slider', min: 0.1, max: 1, step: 0.05, value: set.backingInRec, oninput: e => { set.backingInRec = +e.target.value; recLbl.textContent = Math.round(set.backingInRec * 100) + '%'; Store.save(); } }),
+    h('div', { class: 'row between' }, h('div', null, h('div', null, 'Tap sounds'), h('div', { class: 'small muted' }, 'Soft bubble pop when you tap buttons')), toggleEl(set.uiSounds !== false, v => { set.uiSounds = v; Store.save(); })),
     h('div', { class: 'row between' }, h('div', null, h('div', null, 'Hear my guitar through the app'), h('div', { class: 'small muted' }, 'Off with the Pulze (it already plays your guitar). Adds delay.')), toggleEl(set.monitor, v => { set.monitor = v; Store.save(); })),
   ));
 
@@ -497,6 +507,6 @@ function ProgressView() {
       try { const d = JSON.parse(txt); delete d.exported; Store.state = { ...defaultState(), ...d }; Store.save(); UI.toast('Progress restored'); App.go('progress'); } catch (e) { UI.toast('That doesn’t look like a backup'); }
     } }, 'Restore progress backup'),
     h('button', { class: 'btn danger block', onclick: async () => { if (await UI.confirm('Reset all progress?', 'XP, lessons and stats will be erased. Recordings stay in the Journal.', 'Reset', true)) { Store.reset(); App.go('home'); } } }, 'Reset progress'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.1')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.2')));
   return root;
 }

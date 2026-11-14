@@ -143,3 +143,22 @@ function chordShape(rootPc, type) {
   rest.forEach(o => { fingers[o.i] = Math.min(4, next++); });
   return { frets, fingers, barre: r > 0 ? r : 0 };
 }
+
+// Real guitar notes of the chord shape (what the diagram shows)
+function shapeMidis(rootPc, type) {
+  return chordShape(rootPc, type).frets.map((f, i) => f >= 0 ? fretMidi(i, f) : null).filter(x => x !== null);
+}
+function parseChord(v) {
+  const mm = String(v).trim().replace('♯', '#').replace('♭', 'b').match(/^([A-Ga-g])([#b]?)\s*(.*)$/);
+  if (!mm) return null;
+  const pc = pcOf(mm[1].toUpperCase() + mm[2]);
+  const q = mm[3].trim();
+  let type = null;
+  if (q === '' || /^(maj|major)$/i.test(q) || q === 'M') type = 'maj';
+  else if (q === 'm' || /^(min|minor|-)$/i.test(q)) type = 'min';
+  else if (q === '7' || /^dom(inant)?\s*7$/i.test(q)) type = 'dom7';
+  else if (/^(maj7|M7|major\s*7)$/.test(q)) type = 'maj7';
+  else if (/^(m7|min7|minor\s*7)$/i.test(q)) type = 'm7';
+  return type ? { pc, type } : null;
+}
+const EAR_CHORD_POOL = [[0,'maj'],[2,'maj'],[4,'maj'],[5,'maj'],[7,'maj'],[9,'maj'],[11,'maj'],[9,'min'],[4,'min'],[2,'min'],[11,'min']];

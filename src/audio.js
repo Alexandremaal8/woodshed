@@ -83,6 +83,22 @@ const AudioEngine = (() => {
   }
 
   function now() { ensure(); return ctx.currentTime; }
+  // soft UI "bubble pop"
+  function pop(bright = false) {
+    try {
+      ensure();
+      const t = ctx.currentTime + 0.005;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      const f0 = bright ? 520 : 380;
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(f0 * 2.1, t + 0.05);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.06, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.1);
+    } catch (e) {}
+  }
 
   // ---- drums ----
   function kick(when, vol = 1, dest = backingBus) {
@@ -356,7 +372,7 @@ const AudioEngine = (() => {
   }
 
   return {
-    ensure, now, pluck, strum, click, STYLES,
+    ensure, now, pop, pluck, strum, click, STYLES,
     startBacking, stopBacking, setBackingVolume, get backingPlaying() { return backing.playing; },
     openInput, closeInput, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
     get inputOpen() { return !!recorder.stream; },

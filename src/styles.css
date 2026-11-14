@@ -264,3 +264,43 @@ input, select { border-radius: 18px; background: rgba(0,0,0,.3); border: 1px sol
 svg.fb .mark { pointer-events: none; }
 svg.fb .ripple { pointer-events: none; animation: ripple .45s ease-out forwards; }
 @keyframes ripple { from { opacity: .7; } to { opacity: 0; } }
+
+/* ===================== Feel: ripples, springs, transitions ===================== */
+.btn, .chip, .tile, .option, .card.tap, .tabs button, .iconbtn, .levelchip, .seg button, .lessonrow, .recbtn, .chordbox, .rec .play { position: relative; overflow: hidden; -webkit-user-select: none; user-select: none; }
+.rip { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(255,255,255,.35) 0%, rgba(255,255,255,.12) 40%, rgba(255,255,255,0) 70%); transform: scale(0); animation: rip .6s cubic-bezier(.2,.8,.2,1) forwards; }
+.btn.primary .rip, .chip.on .rip, .seg button.on .rip { background: radial-gradient(circle, rgba(255,255,255,.6) 0%, rgba(255,255,255,.2) 40%, rgba(255,255,255,0) 70%); }
+@keyframes rip { to { transform: scale(1); opacity: 0; } }
+
+/* springy press for everything pressable */
+.btn, .chip, .tile, .option, .card.tap, .iconbtn, .levelchip, .lessonrow, .chordbox, .rec .play { transition: transform .35s cubic-bezier(.34,1.8,.5,1), box-shadow .2s, background .2s; }
+.btn:active, .chip:active, .tile:active, .iconbtn:active, .levelchip:active, .rec .play:active { transform: scale(.92); transition-duration: .08s; }
+.card.tap:active, .option:active, .lessonrow:active, .chordbox:active { transform: scale(.97); transition-duration: .08s; }
+.recbtn { transition: transform .35s cubic-bezier(.34,1.8,.5,1), border-radius .3s; }
+.recbtn:active { transform: scale(.88); }
+
+/* page enter: content floats in, staggered */
+.view-enter > * { animation: floatin .42s cubic-bezier(.2,.9,.3,1.15) both; }
+.view-enter > *:nth-child(2) { animation-delay: .04s; }
+.view-enter > *:nth-child(3) { animation-delay: .08s; }
+.view-enter > *:nth-child(4) { animation-delay: .12s; }
+.view-enter > *:nth-child(5) { animation-delay: .16s; }
+.view-enter > *:nth-child(6) { animation-delay: .2s; }
+.view-enter > *:nth-child(n+7) { animation-delay: .24s; }
+@keyframes floatin { from { opacity: 0; transform: translateY(14px) scale(.98); } }
+.feedback, .howto { animation: floatin .35s cubic-bezier(.2,.9,.3,1.15) both; }
+.modal { animation: sheetup .38s cubic-bezier(.2,.9,.3,1.1); }
+.modal.centered { animation: bubblein .38s cubic-bezier(.34,1.6,.5,1); }
+@keyframes sheetup { from { transform: translateY(100%); } }
+@keyframes bubblein { from { transform: scale(.7); opacity: 0; } }
+.toast.show { animation: toastpop .4s cubic-bezier(.34,1.8,.5,1); }
+@keyframes toastpop { from { transform: translateX(-50%) translateY(20px) scale(.8); } }
+
+/* sliding tab pill */
+.tabs { overflow: hidden; }
+.tabs .tabpill { position: absolute; top: 6px; bottom: 6px; left: 0; width: 20%; padding: 0 3px; transition: transform .45s cubic-bezier(.34,1.5,.5,1); pointer-events: none; }
+.tabs .tabpill::before { content: ''; position: absolute; inset: 0 3px; border-radius: 999px; background: linear-gradient(180deg, rgba(242,165,65,.25), rgba(242,165,65,.12)); box-shadow: inset 0 1px 0 rgba(255,220,160,.2); }
+.tabs button.on { background: transparent; }
+.tabs button svg { transition: transform .35s cubic-bezier(.34,1.8,.5,1); }
+.tabs button.on svg { transform: translateY(-2px) scale(1.12); }
+.tabs button { z-index: 1; }
+.chips .chip.on, .seg button.on { animation: pop .35s cubic-bezier(.34,1.8,.5,1); }

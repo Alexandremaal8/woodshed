@@ -489,6 +489,11 @@ function notePositionsBoard(pcs, rootPc, to = 12) {
   }
   return Fretboard({ from: 0, to, marks, fretWidth: 40, onTap: (s2, f2) => AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now(), { gain: 0.35 }) });
 }
+function playShape(rootPc, type, t, opts = {}) {
+  const ms = shapeMidis(rootPc, type);
+  AudioEngine.strum(ms, t, { gain: 0.32, spread: 0.035, ...opts });
+  return ms;
+}
 function howTo(title, ...els) { return h('div', { class: 'howto' }, h('div', { class: 'tiny' }, title), ...els); }
 
 function makeEarQuestion(level) {
@@ -502,11 +507,21 @@ function makeEarQuestion(level) {
       refBtn: () => AudioEngine.pluck(57, AudioEngine.now(), { gain: 0.4 }), refHint: 'Stuck? Tap A to hear an A for comparison.',
       show: () => howTo(`Where to play ${bothNames(pc)} (tap to hear)`, notePositionsBoard([pc], pc)) };
   }
+  if (level === 'C') {
+    const [rootPc, type] = pick(EAR_CHORD_POOL);
+    const nm = chordName(rootPc, type, rootPc === 10);
+    const playFn = () => { const t = now(); const ms = playShape(rootPc, type, t); ms.forEach((m, i) => AudioEngine.pluck(m, t + 1.4 + i * 0.2, { gain: 0.25, dur: 1.6 })); };
+    const others = shuffle(EAR_CHORD_POOL.filter(([r, ty]) => !(r === rootPc && ty === type))).slice(0, 3);
+    const opts = shuffle([[rootPc, type], ...others]).map(([r, ty]) => chordName(r, ty));
+    return { level, tag: 'Chord', prompt: 'Which chord is this?', play: playFn, options: opts, answer: chordName(rootPc, type),
+      accept: v => { const p = parseChord(v); return !!p && p.pc === rootPc && p.type === type; }, reveal: `${nm} (${CHORD_TYPES[type].name.toLowerCase()})`,
+      refBtn: () => AudioEngine.pluck(57, AudioEngine.now(), { gain: 0.4 }), refHint: 'Tap A to hear an A note for comparison.',
+      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type))) };
+  }
   if (level === 1 || level === 2) {
     const types = level === 1 ? ['maj', 'min'] : ['maj', 'min', 'dom7', 'maj7', 'm7'];
     const type = pick(types), rootPc = randInt(0, 11);
-    const vox = chordVoicing(rootPc, type);
-    const playFn = () => { const t = now(); AudioEngine.strum(vox, t, { gain: 0.3, spread: 0.03 }); vox.forEach((m, i) => AudioEngine.pluck(m, t + 1.3 + i * 0.22, { gain: 0.25, dur: 1.6 })); };
+    const playFn = () => { const t = now(); const ms = playShape(rootPc, type, t); ms.forEach((m, i) => AudioEngine.pluck(m, t + 1.4 + i * 0.2, { gain: 0.25, dur: 1.6 })); };
     const label = t => CHORD_TYPES[t].name;
     return { level, prompt: level === 1 ? 'Major or minor?' : 'Which chord type?', play: playFn, options: types.map(label), answer: label(type),
       accept: v => matchChordType(v) === type, reveal: `${chordName(rootPc, type)} (${label(type)})`,
@@ -544,7 +559,7 @@ function makeEarQuestion(level) {
   }
   // level 5: progressions
   const prog = pick(PROGRESSIONS), keyPc = randInt(0, 11);
-  const playFn = () => { const t = now(); prog.steps.forEach(([o, ty], i) => AudioEngine.strum(chordVoicing(mod12(keyPc + o), ty), t + i * 1.1, { gain: 0.28, spread: 0.025, cut: 1.0 })); };
+  const playFn = () => { const t = now(); prog.steps.forEach(([o, ty], i) => playShape(mod12(keyPc + o), ty, t + i * 1.2, { gain: 0.28, spread: 0.03, cut: 1.1 })); };
   const opts = shuffle([prog, ...shuffle(PROGRESSIONS.filter(p => p !== prog)).slice(0, 3)]).map(p => p.name);
   const fl = [5, 10, 3, 8, 1].includes(keyPc);
   return { level, prompt: 'Which progression?', play: playFn, options: opts, answer: prog.name,
@@ -599,7 +614,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
       q.refHint ? h('p', { class: 'small muted' }, q.refHint) : null);
     root.appendChild(card);
     if (typed) {
-      const inp = h('input', { placeholder: level === 3 ? 'e.g. minor 3rd, P5' : level === 4 ? 'e.g. C#' : level === 5 ? 'e.g. I V vi IV' : 'e.g. minor, maj7', autocapitalize: 'off', autocomplete: 'off' });
+      const inp = h('input', { placeholder: level === 3 ? 'e.g. minor 3rd, P5' : level === 4 || level === 'N' ? 'e.g. C#' : level === 'C' ? 'e.g. G, Am, Bb' : level === 5 ? 'e.g. I V vi IV' : 'e.g. minor, maj7', autocapitalize: 'off', autocomplete: 'off' });
       root.appendChild(h('form', { class: 'row', onsubmit: e => { e.preventDefault(); if (!inp.value.trim()) return; result(q.accept(inp.value)); } }, inp, h('button', { class: 'btn primary', type: 'submit' }, 'OK')));
       root.appendChild(h('p', { class: 'muted small center' }, 'Typed mode is on. You can turn it off in the Ear tab.'));
     } else {

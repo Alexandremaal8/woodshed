@@ -201,8 +201,7 @@ function ChordDiagram(rootPc, type, opts = {}) {
     }
   });
   const wrap = h('div', { class: 'chordbox', onclick: () => {
-    const t = AudioEngine.now();
-    frets.forEach((f, i) => { if (f >= 0) AudioEngine.pluck(fretMidi(i, f), t + i * 0.03, { gain: 0.22 }); });
+    AudioEngine.strum(shapeMidis(rootPc, type), AudioEngine.now() + 0.02, { gain: 0.32, spread: 0.035 });
   } }, h('b', null, opts.label || chordName(rootPc, type)), svg);
   return wrap;
 }
