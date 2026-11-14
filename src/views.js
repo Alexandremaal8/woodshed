@@ -67,7 +67,7 @@ function HomeView() {
         ['🎛️', 'Free jam', 'backing tracks', () => App.go('studio')],
         ['📖', 'Lessons', due ? `${due} to review` : 'browse', () => App.go(due >= 3 ? 'review' : 'learn')],
         ['🎁', 'Surprise', st.surpriseDone === todayStr() ? 'done ✓' : '+25 XP', () => App.go('challenge')],
-        ['📈', 'Progress', `level ${levelInfo().lvl}`, () => App.go('progress')],
+        ['🎤', 'Play it', 'the app listens', () => App.go('playit', { mode: 'note' })],
       ];
       hero.append(
         h('div', { class: 'tiny', style: { color: 'var(--accent2)' } }, 'No pressure. Pick anything:'),
@@ -77,6 +77,12 @@ function HomeView() {
   }
   renderHero();
   root.appendChild(hero);
+
+  const tn = teacherNote();
+  root.appendChild(h('div', { class: 'card teacher row' },
+    h('span', { class: 'bubble', style: { width: '46px', height: '46px', fontSize: '22px', flexShrink: 0 } }, '🎓'),
+    h('div', { class: 'grow' }, h('div', { class: 'tiny', style: { color: 'var(--accent2)' } }, 'Teacher’s note'), h('p', { class: 'small' }, tn.text)),
+    h('button', { class: 'btn sm primary', onclick: tn.go }, tn.cta)));
 
   root.appendChild(h('div', { class: 'card stack' },
     h('div', { class: 'row between' }, h('div', null, h('div', { class: 'tiny' }, 'This week'), h('h3', null, `${done} / ${goal} sessions`)),
@@ -164,7 +170,7 @@ function SessionView({ minutes }) {
       const finishNoRec = h('button', { class: 'btn ghost block small', onclick: async () => {
         if (await UI.confirm('Finish without a recording?', 'You get a little XP, but the session won’t count for your weekly goal. A recording is your proof!', 'Finish anyway')) complete(false);
       } }, 'Finish without recording');
-      child = StudioView({ ...lesson.jam, lessonId: lesson.id, title: `${lesson.title}: jam` }, { mode: 'session', onSaved: () => complete(true), footer: finishNoRec });
+      child = StudioView({ ...lesson.jam, lessonId: lesson.id, title: `${lesson.title}: jam` }, { mode: 'session', onSaved: rec => teacherCheck(rec).then(() => complete(true)), footer: finishNoRec });
       body.appendChild(child);
     } else {
       body.appendChild(summary);
@@ -223,7 +229,7 @@ function LearnView() {
       App.go('chapter', { id: ch.id });
     } },
       h('div', { class: 'row' }, h('div', { class: 'num' }, unlocked ? ch.icon : '🔒'),
-        h('div', { class: 'grow' }, h('div', { class: 'tiny' }, `Chapter ${i + 1}`), h('h3', null, ch.title), h('p', { class: 'small muted' }, ch.blurb))),
+        h('div', { class: 'grow' }, h('div', { class: 'tiny' }, `Chapter ${i + 1}` + (Store.state.mastered?.[ch.id] ? ' · ⭐ mastered' : '')), h('h3', null, ch.title), h('p', { class: 'small muted' }, ch.blurb))),
       ch.soon ? h('div', { class: 'badge', style: { marginTop: '10px' } }, 'Coming soon') :
         h('div', { class: 'row', style: { marginTop: '12px' } }, h('div', { class: 'bar good grow' }, h('i', { style: { width: (p.total ? 100 * p.done / p.total : 0) + '%' } })), h('span', { class: 'small muted' }, `${p.done}/${p.total}`))));
   });
@@ -234,6 +240,12 @@ function ChapterView({ id }) {
   const root = h('div', { class: 'stack' });
   root.appendChild(topBar(ch.title, { back: () => App.go('learn') }));
   root.appendChild(h('p', { class: 'muted' }, ch.blurb));
+  const allDone = ch.lessons.every(l => Store.state.lessonsDone[l.id]);
+  const mastered = Store.state.mastered?.[ch.id];
+  root.appendChild(h('div', { class: 'card row' + (allDone ? '' : ' dim') },
+    h('span', { class: 'bubble', style: { width: '44px', height: '44px', fontSize: '20px' } }, mastered ? '⭐' : '🏁'),
+    h('div', { class: 'grow' }, h('h3', null, mastered ? 'Chapter mastered' : 'Chapter test'), h('p', { class: 'small muted' }, mastered ? `Passed on ${mastered}. You can retake it anytime.` : allDone ? '8 questions, 80% to pass. Like an exam with your teacher.' : 'Unlocks when every lesson here is done.')),
+    allDone ? h('button', { class: 'btn sm' + (mastered ? '' : ' primary'), onclick: () => App.go('chaptertest', { id: ch.id }) }, mastered ? 'Retake' : 'Start') : null));
   root.appendChild(h('div', { class: 'card' }, ch.lessons.map((l, i) => {
     const done = !!Store.state.lessonsDone[l.id];
     return h('div', { class: 'lessonrow tap', style: { cursor: 'pointer' }, onclick: () => App.go('lesson', { id: l.id }) },
@@ -285,6 +297,11 @@ function EarView() {
     h('h2', null, earDone ? `Done today: ${st.ear.dailyScore}/10` : '10 questions · ~2 min'),
     h('p', { class: 'small muted' }, 'Major/minor, chord names (G, A, Em…), single notes and your current level. Use headphones or the Pulze.'),
     h('button', { class: 'btn primary block', onclick: () => App.go('earRun', { daily: !earDone }) }, earDone ? 'Practice more' : 'Start (+15 XP)')));
+  root.appendChild(h('div', { class: 'card stack' },
+    h('div', { class: 'row' }, h('span', { class: 'bubble', style: { width: '44px', height: '44px', fontSize: '20px' } }, '🎤'),
+      h('div', { class: 'grow' }, h('h3', null, 'Play it: the app listens'), h('p', { class: 'small muted' }, 'Play on your guitar, the app hears if it’s right. Like a teacher checking you.'))),
+    h('div', { class: 'tiles' }, Object.entries(PLAYIT_MODES).map(([k, m]) => h('button', { class: 'tile', onclick: () => App.go('playit', { mode: k }) }, h('span', { class: 'bubble' }, m.icon), h('b', null, m.title.replace('Play the ', '')), h('small', null, st.playit?.[k] ? `best ${st.playit[k]}` : 'new'))),
+      h('button', { class: 'tile', onclick: () => App.go('tuner') }, h('span', { class: 'bubble' }, '🎚️'), h('b', null, 'Tuner'), h('small', null, 'tune up')))));
   const accC = earAccuracy('C');
   root.appendChild(h('div', { class: 'card stack' },
     h('div', { class: 'row' },
@@ -418,7 +435,8 @@ function JournalView() {
         h('div', { class: 'row' }, btn,
           h('div', { class: 'grow' }, h('h3', { style: { fontSize: '16px' } }, (r.fav ? '♥ ' : '') + r.title),
             h('p', { class: 'small muted' }, `${fmtDate(r.createdAt)} · ${fmtTime(r.duration)}${r.ctx?.key ? ' · ' + r.ctx.key : ''}${r.ctx?.bpm ? ' · ' + r.ctx.bpm + ' BPM' : ''}`),
-            r.tone ? h('p', { class: 'small', style: { color: 'var(--accent2)' } }, '🎛 ' + r.tone) : null)),
+            r.tone ? h('p', { class: 'small', style: { color: 'var(--accent2)' } }, '🎛 ' + r.tone) : null,
+            r.review ? h('p', { class: 'small muted' }, `🎓 Teacher check: ${r.review.score}/4`) : null)),
         h('div', { class: 'seek' }, seekBar),
         compare ? h('p', { class: 'small', style: { marginTop: '8px', color: sel ? 'var(--blue)' : 'var(--muted)' } }, sel ? '✓ Selected for comparison' : 'Tap to select') :
           h('div', { class: 'row', style: { marginTop: '10px', gap: '6px' } },
@@ -517,6 +535,6 @@ function ProgressView() {
       try { const d = JSON.parse(txt); delete d.exported; Store.state = { ...defaultState(), ...d }; Store.save(); UI.toast('Progress restored'); App.go('progress'); } catch (e) { UI.toast('That doesn’t look like a backup'); }
     } }, 'Restore progress backup'),
     h('button', { class: 'btn danger block', onclick: async () => { if (await UI.confirm('Reset all progress?', 'XP, lessons and stats will be erased. Recordings stay in the Journal.', 'Reset', true)) { Store.reset(); App.go('home'); } } }, 'Reset progress'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.6')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.7')));
   return root;
 }

@@ -335,7 +335,7 @@ const AudioEngine = (() => {
     recorder.src = ctx.createMediaStreamSource(stream);
     recorder.inGain = ctx.createGain();
     recorder.inGain.gain.value = 1;
-    recorder.analyser = ctx.createAnalyser(); recorder.analyser.fftSize = 1024;
+    recorder.analyser = ctx.createAnalyser(); recorder.analyser.fftSize = 2048;
     recorder.src.connect(recorder.inGain); recorder.inGain.connect(recorder.analyser);
     if (ctx.state !== 'running') await ctx.resume();
     return true;
@@ -353,6 +353,40 @@ const AudioEngine = (() => {
     let pk = 0; for (const x of a) pk = Math.max(pk, Math.abs(x));
     return pk;
   }
+  // ---- pitch detection (YIN) for the "play it" exercises and the tuner ----
+  let pbuf = null;
+  function detectPitch() {
+    if (!recorder.analyser) return null;
+    const N = recorder.analyser.fftSize;
+    if (!pbuf || pbuf.length !== N) pbuf = new Float32Array(N);
+    recorder.analyser.getFloatTimeDomainData(pbuf);
+    let rms = 0; for (let i = 0; i < N; i++) rms += pbuf[i] * pbuf[i];
+    rms = Math.sqrt(rms / N);
+    if (rms < 0.008) return { silent: true, rms };
+    const sr = ctx.sampleRate;
+    const tauMin = Math.floor(sr / 1250), tauMax = Math.min(Math.floor(sr / 65), N - 1024 - 2);
+    const W = Math.min(1024, N - tauMax - 1);
+    const d = new Float32Array(tauMax + 2);
+    for (let tau = 1; tau <= tauMax + 1; tau++) {
+      let s = 0;
+      for (let j = 0; j < W; j++) { const v = pbuf[j] - pbuf[j + tau]; s += v * v; }
+      d[tau] = s;
+    }
+    let run = 0, best = -1;
+    const cm = new Float32Array(tauMax + 2); cm[0] = 1;
+    for (let tau = 1; tau <= tauMax + 1; tau++) { run += d[tau]; cm[tau] = run ? d[tau] * tau / run : 1; }
+    for (let tau = tauMin; tau <= tauMax; tau++) {
+      if (cm[tau] < 0.15) { while (tau + 1 <= tauMax && cm[tau + 1] < cm[tau]) tau++; best = tau; break; }
+    }
+    if (best < 0) { let mn = 1; for (let tau = tauMin; tau <= tauMax; tau++) if (cm[tau] < mn) { mn = cm[tau]; best = tau; } if (mn > 0.35) return { silent: false, unclear: true, rms }; }
+    const a0 = cm[best - 1], a1 = cm[best], a2 = cm[best + 1];
+    const shift = (a0 - a2) / (2 * (a0 - 2 * a1 + a2)) || 0;
+    const freq = sr / (best + (Math.abs(shift) < 1 ? shift : 0));
+    const midiF = 69 + 12 * Math.log2(freq / 440);
+    const midi = Math.round(midiF);
+    return { freq, midi, pc: mod12(midi), cents: Math.round((midiF - midi) * 100), clarity: 1 - a1, rms };
+  }
+
   function closeInput() {
     if (recorder.mr && recorder.mr.state !== 'inactive') { try { recorder.mr.stop(); } catch (e) {} }
     setMonitor(false);
@@ -413,7 +447,7 @@ const AudioEngine = (() => {
   return {
     ensure, now, pop, tick, chime, nope, sparkle, pluck, strum, click, STYLES,
     startBacking, stopBacking, setBackingVolume, get backingPlaying() { return backing.playing; },
-    openInput, closeInput, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
+    openInput, closeInput, detectPitch, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
     get inputOpen() { return !!recorder.stream; },
   };
 })();
