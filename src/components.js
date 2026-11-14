@@ -530,7 +530,7 @@ function makeEarQuestion(level) {
     const playFn = () => { const t = now(); const ms = playShape(rootPc, type, t); ms.forEach((m, i) => AudioEngine.pluck(m, t + 1.4 + i * 0.2, { gain: 0.25, dur: 1.6 })); };
     const label = t => CHORD_TYPES[t].name;
     return { level, prompt: level === 1 ? 'Major or minor?' : 'Which chord type?', play: playFn, options: types.map(label), answer: label(type),
-      accept: v => matchChordType(v) === type, reveal: fullChordName(rootPc, type),
+      accept: v => matchChordType(v) === type, reveal: fullChordName(rootPc, type) + ' · ' + ({ maj: 'major = 1 3 5, happy', min: 'minor = 1 b3 5, sad', dom7: 'dominant 7 = major + b7, bluesy and tense', maj7: 'major 7 = major + 7, soft and dreamy', m7: 'minor 7 = minor + b7, smooth' }[type]),
       show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type, { label: fullChordName(rootPc, type).replace(/ \(.*\)/, '') }))) };
   }
   if (level === 3) {

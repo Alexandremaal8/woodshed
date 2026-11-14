@@ -196,3 +196,8 @@ const RecDB = (() => {
 async function requestPersistence() {
   try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {}
 }
+
+// Ear levels follow the lessons: you're only tested on what you've been taught
+const EAR_REQ = { 2: 'l4-4', 3: 'l2-2', 4: 'l1-3', 5: 'l4-3' };
+function earLevelAllowed(lv) { const r = EAR_REQ[lv]; return !r || !!Store.state.lessonsDone[r]; }
+function earEffectiveLevel() { let u = Store.state.ear.unlocked; while (u > 1 && !earLevelAllowed(u)) u--; return u; }

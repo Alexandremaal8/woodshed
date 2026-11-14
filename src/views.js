@@ -319,7 +319,9 @@ function EarView() {
     h('div', { class: 'row' }, h('div', { class: 'bar good grow' }, h('i', { style: { width: (accN || 0) + '%' } })), h('span', { class: 'small muted' }, accN === null ? 'no data' : `${accN}% (last 20)`)),
     st.ear.typedAvail?.['N'] ? h('div', { class: 'row between' }, h('span', { class: 'small' }, '⌨️ Typed answers (harder)'), toggleEl(!!st.ear.typed['N'], v => { st.ear.typed['N'] = v; Store.save(); })) : h('p', { class: 'small muted' }, 'Typed answers unlock at 80% here.')));
   EAR_LEVELS.forEach(L => {
-    const unlocked = L.id <= st.ear.unlocked;
+    const earned = L.id <= st.ear.unlocked;
+    const needLesson = !earLevelAllowed(L.id) ? LESSON_BY_ID[EAR_REQ[L.id]] : null;
+    const unlocked = earned && !needLesson;
     const acc = earAccuracy(L.id);
     const typedAvail = st.ear.typedAvail?.[L.id];
     const card = h('div', { class: 'card stack' + (unlocked ? '' : ' dim') },
@@ -328,7 +330,9 @@ function EarView() {
         h('div', { class: 'grow' }, h('h3', null, L.name), h('p', { class: 'small muted' }, L.desc)),
         unlocked ? h('button', { class: 'btn sm', onclick: () => App.go('earRun', { levels: [L.id] }) }, 'Practice') : null),
       unlocked ? h('div', { class: 'row' }, h('div', { class: 'bar good grow' }, h('i', { style: { width: (acc || 0) + '%' } })), h('span', { class: 'small muted' }, acc === null ? 'no data' : `${acc}% (last 20)`)) :
-        h('p', { class: 'small muted' }, 'Unlocks at 80% on the previous level (last 20 answers).'),
+        h('div', { class: 'stack' },
+          needLesson ? h('div', { class: 'row between' }, h('p', { class: 'small' }, `📖 Learn first: “${needLesson.title}” (${needLesson.chapter.title})`), h('button', { class: 'btn sm primary', onclick: () => App.go('lesson', { id: needLesson.id }) }, 'Open')) : null,
+          earned ? null : h('p', { class: 'small muted' }, 'Unlocks at 80% on the previous level (last 20 answers).')),
       typedAvail ? h('div', { class: 'row between' }, h('span', { class: 'small' }, '⌨️ Typed answers (harder)'), toggleEl(!!st.ear.typed[L.id], v => { st.ear.typed[L.id] = v; Store.save(); })) :
         (unlocked ? h('p', { class: 'small muted' }, 'Typed answers unlock at 80% here.') : null));
     root.appendChild(card);
@@ -338,7 +342,7 @@ function EarView() {
 function EarRunView({ daily = false, levels }) {
   const st = Store.state;
   let lv = levels;
-  if (!lv) { const u = st.ear.unlocked; lv = u === 1 ? [1, 1, 'C', 'C', 'N'] : [u, u, u - 1, Math.max(1, u - 2), 'C', 'C', 'N']; }
+  if (!lv) { const u = earEffectiveLevel(); lv = u === 1 ? [1, 1, 'C', 'C', 'N'] : [u, u, u - 1, Math.max(1, u - 2), 'C', 'C', 'N']; }
   const root = h('div', { class: 'stack' });
   root.appendChild(topBar(daily ? 'Daily ear challenge' : 'Ear practice', { back: () => App.go('ear') }));
   const run = EarRun({ levels: lv, count: 10, daily, onDone: () => App.go(daily ? 'home' : 'ear') });
@@ -541,6 +545,6 @@ function ProgressView() {
       try { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.update())); } catch (e) {}
       setTimeout(() => location.reload(), 400);
     } }, '🔄 Update the app now'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.7.2 · your progress is never touched by updates')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.7.3 · your progress is never touched by updates')));
   return root;
 }
