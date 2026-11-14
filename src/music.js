@@ -106,3 +106,40 @@ const KEYS = ['E','A','D','G','C','F','Bb','B','F#','C#','Eb','Ab'];
 function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+// ---------- Chord shapes (for diagrams) ----------
+// frets low E → high e, -1 = muted. fingers same order (0 = open / none)
+const OPEN_SHAPES = {
+  'C:maj':  { f: [-1,3,2,0,1,0], g: [0,3,2,0,1,0] },
+  'D:maj':  { f: [-1,-1,0,2,3,2], g: [0,0,0,1,3,2] },
+  'G:maj':  { f: [3,2,0,0,0,3], g: [2,1,0,0,0,3] },
+  'D:min':  { f: [-1,-1,0,2,3,1], g: [0,0,0,2,3,1] },
+  'D:dom7': { f: [-1,-1,0,2,1,2], g: [0,0,0,2,1,3] },
+  'C:dom7': { f: [-1,3,2,3,1,0], g: [0,3,2,4,1,0] },
+  'G:dom7': { f: [3,2,0,0,0,1], g: [3,2,0,0,0,1] },
+  'B:dom7': { f: [-1,2,1,2,0,2], g: [0,2,1,3,0,4] },
+  'C:maj7': { f: [-1,3,2,0,0,0], g: [0,3,2,0,0,0] },
+  'D:maj7': { f: [-1,-1,0,2,2,2], g: [0,0,0,1,2,3] },
+  'F:maj7': { f: [-1,-1,3,2,1,0], g: [0,0,3,2,1,0] },
+  'D:m7':   { f: [-1,-1,0,2,1,1], g: [0,0,0,2,1,1] },
+};
+const BARRE_SHAPES = {
+  E: { maj: [0,2,2,1,0,0], min: [0,2,2,0,0,0], dom7: [0,2,0,1,0,0], maj7: [0,2,1,1,0,0], m7: [0,2,0,0,0,0], dim: [0,1,2,0,-99,-99] },
+  A: { maj: [-99,0,2,2,2,0], min: [-99,0,2,2,1,0], dom7: [-99,0,2,0,2,0], maj7: [-99,0,2,1,2,0], m7: [-99,0,2,0,1,0], dim: [-99,0,1,2,1,-99] },
+};
+function chordShape(rootPc, type) {
+  const name = noteName(rootPc);
+  const open = OPEN_SHAPES[name + ':' + type];
+  if (open) return { frets: open.f, fingers: open.g };
+  const rE = mod12(rootPc - 4), rA = mod12(rootPc - 9);
+  const useE = rE <= rA;
+  const r = useE ? rE : rA;
+  const rel = BARRE_SHAPES[useE ? 'E' : 'A'][type];
+  const frets = rel.map(x => x <= -50 ? -1 : r + x);
+  const fingers = frets.map(() => 0);
+  if (r > 0) frets.forEach((f, i) => { if (f === r) fingers[i] = 1; });
+  const rest = frets.map((f, i) => ({ f, i })).filter(o => o.f > r).sort((a, b) => a.f - b.f || a.i - b.i);
+  let next = r > 0 ? 2 : 1;
+  rest.forEach(o => { fingers[o.i] = Math.min(4, next++); });
+  return { frets, fingers, barre: r > 0 ? r : 0 };
+}

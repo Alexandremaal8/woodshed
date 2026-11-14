@@ -270,6 +270,14 @@ input, select { border-radius: 18px; background: rgba(0,0,0,.3); border: 1px sol
 .lessoncard { min-height: 240px; }
 .toggle { box-shadow: inset 0 2px 4px rgba(0,0,0,.35); }
 .toggle::after { box-shadow: 0 2px 5px rgba(0,0,0,.35); }
+.chordbox { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 8px 6px; border-radius: 22px; background: rgba(0,0,0,.25); cursor: pointer; }
+.chordbox b { font-size: 18px; }
+.chordrow { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.howto { margin-top: 12px; text-align: center; }
+.howto .tiny { margin-bottom: 8px; }
+svg.fb .mark { pointer-events: none; }
+svg.fb .ripple { pointer-events: none; animation: ripple .45s ease-out forwards; }
+@keyframes ripple { from { opacity: .7; } to { opacity: 0; } }
 </style>
 </head>
 <body>
@@ -383,6 +391,43 @@ const KEYS = ['E','A','D','G','C','F','Bb','B','F#','C#','Eb','Ab'];
 function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
 function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+// ---------- Chord shapes (for diagrams) ----------
+// frets low E → high e, -1 = muted. fingers same order (0 = open / none)
+const OPEN_SHAPES = {
+  'C:maj':  { f: [-1,3,2,0,1,0], g: [0,3,2,0,1,0] },
+  'D:maj':  { f: [-1,-1,0,2,3,2], g: [0,0,0,1,3,2] },
+  'G:maj':  { f: [3,2,0,0,0,3], g: [2,1,0,0,0,3] },
+  'D:min':  { f: [-1,-1,0,2,3,1], g: [0,0,0,2,3,1] },
+  'D:dom7': { f: [-1,-1,0,2,1,2], g: [0,0,0,2,1,3] },
+  'C:dom7': { f: [-1,3,2,3,1,0], g: [0,3,2,4,1,0] },
+  'G:dom7': { f: [3,2,0,0,0,1], g: [3,2,0,0,0,1] },
+  'B:dom7': { f: [-1,2,1,2,0,2], g: [0,2,1,3,0,4] },
+  'C:maj7': { f: [-1,3,2,0,0,0], g: [0,3,2,0,0,0] },
+  'D:maj7': { f: [-1,-1,0,2,2,2], g: [0,0,0,1,2,3] },
+  'F:maj7': { f: [-1,-1,3,2,1,0], g: [0,0,3,2,1,0] },
+  'D:m7':   { f: [-1,-1,0,2,1,1], g: [0,0,0,2,1,1] },
+};
+const BARRE_SHAPES = {
+  E: { maj: [0,2,2,1,0,0], min: [0,2,2,0,0,0], dom7: [0,2,0,1,0,0], maj7: [0,2,1,1,0,0], m7: [0,2,0,0,0,0], dim: [0,1,2,0,-99,-99] },
+  A: { maj: [-99,0,2,2,2,0], min: [-99,0,2,2,1,0], dom7: [-99,0,2,0,2,0], maj7: [-99,0,2,1,2,0], m7: [-99,0,2,0,1,0], dim: [-99,0,1,2,1,-99] },
+};
+function chordShape(rootPc, type) {
+  const name = noteName(rootPc);
+  const open = OPEN_SHAPES[name + ':' + type];
+  if (open) return { frets: open.f, fingers: open.g };
+  const rE = mod12(rootPc - 4), rA = mod12(rootPc - 9);
+  const useE = rE <= rA;
+  const r = useE ? rE : rA;
+  const rel = BARRE_SHAPES[useE ? 'E' : 'A'][type];
+  const frets = rel.map(x => x <= -50 ? -1 : r + x);
+  const fingers = frets.map(() => 0);
+  if (r > 0) frets.forEach((f, i) => { if (f === r) fingers[i] = 1; });
+  const rest = frets.map((f, i) => ({ f, i })).filter(o => o.f > r).sort((a, b) => a.f - b.f || a.i - b.i);
+  let next = r > 0 ? 2 : 1;
+  rest.forEach(o => { fingers[o.i] = Math.min(4, next++); });
+  return { frets, fingers, barre: r > 0 ? r : 0 };
+}
 
 // ---------- Audio engine: guitar synth, drums, backing tracks, recorder ----------
 const AudioEngine = (() => {
@@ -1469,7 +1514,12 @@ function Fretboard(opts) {
     for (let st = 0; st < 6; st++) for (const f of fs) {
       const cx = fretX(f), w = f === 0 ? openW : fw;
       const r = s('rect', { class: 'cell', x: cx - w / 2, y: yOf(st) - sh / 2, width: w, height: sh });
-      r.addEventListener('pointerdown', e => { e.preventDefault(); opts.onTap(st, f); });
+      r.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        const rp = s('circle', { class: 'ripple', cx, cy: yOf(st), r: 17, fill: 'none', stroke: '#ffcf7a', 'stroke-width': 3 });
+        svg.appendChild(rp); setTimeout(() => rp.remove(), 480);
+        opts.onTap(st, f);
+      });
       svg.appendChild(r);
     }
   }
@@ -1540,6 +1590,42 @@ function toggleEl(on, onchange) {
   const t = h('button', { class: 'toggle' + (on ? ' on' : ''), role: 'switch' });
   t.addEventListener('click', () => { on = !on; t.classList.toggle('on', on); onchange(on); });
   return t;
+}
+
+// ---------- Chord box diagram ----------
+function ChordDiagram(rootPc, type, opts = {}) {
+  const { frets, fingers, barre } = chordShape(rootPc, type);
+  const played = frets.filter(f => f > 0);
+  const minF = played.length ? Math.min(...played) : 1;
+  const maxF = played.length ? Math.max(...played) : 1;
+  const start = maxF <= 4 ? 1 : minF;
+  const nF = Math.max(4, maxF - start + 1);
+  const sw = opts.small ? 18 : 24, fh = opts.small ? 22 : 30, padX = 26, padT = 34;
+  const W = padX * 2 + sw * 5, H = padT + fh * nF + 14;
+  const svg = s('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
+  const x = i => padX + i * sw, y = f => padT + (f - start + 0.5) * fh;
+  svg.appendChild(s('rect', { x: x(0), y: padT, width: sw * 5, height: fh * nF, rx: 4, fill: '#2a1f17' }));
+  for (let k = 0; k <= nF; k++) svg.appendChild(s('line', { x1: x(0), x2: x(5), y1: padT + k * fh, y2: padT + k * fh, stroke: k === 0 && start === 1 ? '#e8dcc8' : '#8a7a66', 'stroke-width': k === 0 && start === 1 ? 5 : 1.5 }));
+  for (let i = 0; i < 6; i++) svg.appendChild(s('line', { x1: x(i), x2: x(i), y1: padT, y2: padT + fh * nF, stroke: '#cfc3b1', 'stroke-width': 1 + (5 - i) * 0.25 }));
+  if (start > 1) svg.appendChild(s('text', { x: x(5) + 8, y: y(start) + 4, 'font-size': 11, fill: '#f2a541', 'font-weight': 700 }, start + 'fr'));
+  if (barre && barre >= start) {
+    const idx = frets.map((f, i) => f === barre ? i : -1).filter(i => i >= 0);
+    if (idx.length > 1) svg.appendChild(s('rect', { x: x(idx[0]) - 9, y: y(barre) - 9, width: x(idx[idx.length - 1]) - x(idx[0]) + 18, height: 18, rx: 9, fill: '#f2a541' }));
+  }
+  frets.forEach((f, i) => {
+    if (f === -1) svg.appendChild(s('text', { x: x(i), y: padT - 10, 'font-size': 13, fill: '#ef5d5d', 'text-anchor': 'middle', 'font-weight': 800 }, '×'));
+    else if (f === 0) svg.appendChild(s('circle', { cx: x(i), cy: padT - 14, r: 5, fill: 'none', stroke: '#4fc18f', 'stroke-width': 2 }));
+    else {
+      const isRoot = fretPc(i, f) === mod12(rootPc);
+      svg.appendChild(s('circle', { cx: x(i), cy: y(f), r: opts.small ? 8 : 10, fill: isRoot ? '#f2a541' : '#f4ede4', stroke: '#120f0d' }));
+      if (fingers[i]) svg.appendChild(s('text', { x: x(i), y: y(f) + 4, 'font-size': opts.small ? 10 : 12, 'font-weight': 800, fill: '#241505', 'text-anchor': 'middle' }, fingers[i]));
+    }
+  });
+  const wrap = h('div', { class: 'chordbox', onclick: () => {
+    const t = AudioEngine.now();
+    frets.forEach((f, i) => { if (f >= 0) AudioEngine.pluck(fretMidi(i, f), t + i * 0.03, { gain: 0.22 }); });
+  } }, h('b', null, opts.label || chordName(rootPc, type)), svg);
+  return wrap;
 }
 
 // ---------- Interactive components ----------
@@ -2024,8 +2110,28 @@ function StudioView(cfg = {}, opts = {}) {
 }
 
 // ---------- Ear training ----------
+// Fretboard showing every place a note (or a pair of notes) lives, for the answer reveal
+function notePositionsBoard(pcs, rootPc, to = 12) {
+  const marks = [];
+  for (let st = 0; st < 6; st++) for (let f = 0; f <= to; f++) {
+    const pc = fretPc(st, f);
+    if (pcs.includes(pc)) marks.push({ s: st, f, label: noteName(pc), root: pc === rootPc });
+  }
+  return Fretboard({ from: 0, to, marks, fretWidth: 40, onTap: (s2, f2) => AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now(), { gain: 0.35 }) });
+}
+function howTo(title, ...els) { return h('div', { class: 'howto' }, h('div', { class: 'tiny' }, title), ...els); }
+
 function makeEarQuestion(level) {
   const now = () => AudioEngine.now() + 0.05;
+  if (level === 'N') {
+    // single note, no reference: guess the note
+    const m = randInt(52, 66), pc = mod12(m);
+    const playFn = () => { const t = now(); AudioEngine.pluck(m, t, { gain: 0.45 }); AudioEngine.pluck(m, t + 1.1, { gain: 0.35 }); };
+    const opts = shuffle([pc, ...shuffle([...Array(12).keys()].filter(x => x !== pc)).slice(0, 3)]).map(bothNames);
+    return { level, tag: 'Note', prompt: 'Which note is this?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: bothNames(pc),
+      refBtn: () => AudioEngine.pluck(57, AudioEngine.now(), { gain: 0.4 }), refHint: 'Stuck? Tap A to hear an A for comparison.',
+      show: () => howTo(`Where to play ${bothNames(pc)} (tap to hear)`, notePositionsBoard([pc], pc)) };
+  }
   if (level === 1 || level === 2) {
     const types = level === 1 ? ['maj', 'min'] : ['maj', 'min', 'dom7', 'maj7', 'm7'];
     const type = pick(types), rootPc = randInt(0, 11);
@@ -2033,7 +2139,8 @@ function makeEarQuestion(level) {
     const playFn = () => { const t = now(); AudioEngine.strum(vox, t, { gain: 0.3, spread: 0.03 }); vox.forEach((m, i) => AudioEngine.pluck(m, t + 1.3 + i * 0.22, { gain: 0.25, dur: 1.6 })); };
     const label = t => CHORD_TYPES[t].name;
     return { level, prompt: level === 1 ? 'Major or minor?' : 'Which chord type?', play: playFn, options: types.map(label), answer: label(type),
-      accept: v => matchChordType(v) === type, reveal: `${chordName(rootPc, type)} (${label(type)})` };
+      accept: v => matchChordType(v) === type, reveal: `${chordName(rootPc, type)} (${label(type)})`,
+      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type))) };
   }
   if (level === 3) {
     const pool = EAR_INTERVAL_SET.slice(0, Store.state.ear.typed[3] ? 9 : 7);
@@ -2041,21 +2148,38 @@ function makeEarQuestion(level) {
     const info = INTERVALS.find(x => x.semi === iv);
     const playFn = () => { const t = now(); AudioEngine.pluck(r, t, { gain: 0.4 }); AudioEngine.pluck(r + iv, t + 0.7, { gain: 0.4 }); AudioEngine.pluck(r, t + 1.6, { gain: 0.3 }); AudioEngine.pluck(r + iv, t + 1.6, { gain: 0.3 }); };
     const opts = shuffle([iv, ...shuffle(pool.filter(x => x !== iv)).slice(0, 3)]).map(x => INTERVALS.find(y => y.semi === x).name);
-    return { level, prompt: 'Which interval?', play: playFn, options: opts, answer: info.name, accept: v => matchInterval(v) === iv, reveal: `${info.name} (${iv} half steps)` };
+    // show the shape: root on low E or A string
+    const show = () => {
+      let st = r < 45 ? 0 : (r - 45 <= 9 ? 1 : 2);
+      const f = r - STRINGS[st].midi;
+      const target = r + iv;
+      let best = null;
+      for (let s2 = st; s2 < 6; s2++) { const f2 = target - STRINGS[s2].midi; if (f2 >= 0 && f2 <= 15 && (!best || Math.abs(f2 - f) < Math.abs(best.f - f))) best = { s: s2, f: f2 }; }
+      const marks = [{ s: st, f, label: 'R', root: true }];
+      if (best) marks.push({ s: best.s, f: best.f, label: info.short });
+      const lo = Math.max(0, Math.min(f, best ? best.f : f) - 2), hi = Math.min(15, Math.max(f, best ? best.f : f) + 2);
+      const fb = Fretboard({ from: lo, to: Math.max(hi, lo + 5), marks, onTap: (s2, f2) => AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now(), { gain: 0.35 }) });
+      return howTo(`${info.name}: ${noteName(r)} → ${noteName(r + iv)} (tap to hear)`, fb);
+    };
+    return { level, prompt: 'Which interval?', play: playFn, options: opts, answer: info.name, accept: v => matchInterval(v) === iv, reveal: `${info.name} (${iv} half steps)`, show };
   }
   if (level === 4) {
     const ref = 57; // A3
     const off = randInt(1, 11), pc = mod12(9 + off);
     const playFn = () => { const t = now(); AudioEngine.pluck(ref, t, { gain: 0.4 }); AudioEngine.pluck(ref + off, t + 1.0, { gain: 0.45 }); };
     const opts = shuffle([pc, ...shuffle([...Array(12).keys()].filter(x => x !== pc && x !== 9)).slice(0, 3)]).map(bothNames);
-    return { level, prompt: 'First note is A. What is the second note?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: bothNames(pc), refBtn: () => AudioEngine.pluck(ref, AudioEngine.now(), { gain: 0.4 }) };
+    return { level, prompt: 'First note is A. What is the second note?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: bothNames(pc),
+      refBtn: () => AudioEngine.pluck(ref, AudioEngine.now(), { gain: 0.4 }),
+      show: () => howTo(`A (gold) and ${bothNames(pc)} on the neck`, notePositionsBoard([9, pc], 9)) };
   }
   // level 5: progressions
   const prog = pick(PROGRESSIONS), keyPc = randInt(0, 11);
   const playFn = () => { const t = now(); prog.steps.forEach(([o, ty], i) => AudioEngine.strum(chordVoicing(mod12(keyPc + o), ty), t + i * 1.1, { gain: 0.28, spread: 0.025, cut: 1.0 })); };
   const opts = shuffle([prog, ...shuffle(PROGRESSIONS.filter(p => p !== prog)).slice(0, 3)]).map(p => p.name);
+  const fl = [5, 10, 3, 8, 1].includes(keyPc);
   return { level, prompt: 'Which progression?', play: playFn, options: opts, answer: prog.name,
-    accept: v => normProg(v) === normProg(prog.name), reveal: prog.name + ' in ' + noteName(keyPc) };
+    accept: v => normProg(v) === normProg(prog.name), reveal: prog.name + ' in ' + noteName(keyPc, fl),
+    show: () => howTo('The chords (tap to hear)', h('div', { class: 'chordrow' }, prog.steps.map(([o, ty]) => ChordDiagram(mod12(keyPc + o), ty, { small: true, label: chordName(mod12(keyPc + o), ty, fl) })))) };
 }
 function matchChordType(v) {
   const x = v.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -2083,7 +2207,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
     const q = makeEarQuestion(level);
     const typed = Store.state.ear.typedAvail?.[level] && Store.state.ear.typed[level];
     root.innerHTML = '';
-    root.appendChild(h('div', { class: 'row between' }, h('div', { class: 'tiny' }, `${daily ? 'Daily ear challenge' : 'Ear practice'} · ${n + 1}/${count}`), h('div', { class: 'badge' }, `L${level} · ${correct} ✓`)));
+    root.appendChild(h('div', { class: 'row between' }, h('div', { class: 'tiny' }, `${daily ? 'Daily ear challenge' : 'Ear practice'} · ${n + 1}/${count}`), h('div', { class: 'badge' }, `${q.tag || 'L' + level} · ${correct} ✓`)));
     let answered = false;
     const fbBox = h('div');
     function result(ok, chosenBtn) {
@@ -2094,12 +2218,15 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
       fbBox.appendChild(h('div', { class: 'row', style: { marginTop: '10px' } },
         h('button', { class: 'btn grow', onclick: () => q.play() }, 'Hear again'),
         h('button', { class: 'btn primary grow', onclick: () => { n++; nextQ(); } }, 'Next')));
+      if (q.show) { try { fbBox.appendChild(q.show()); } catch (e) { console.error(e); } }
+      setTimeout(() => fbBox.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
     }
     const card = h('div', { class: 'card stack center' },
       h('h2', null, q.prompt),
       h('div', { class: 'row', style: { justifyContent: 'center' } },
         h('button', { class: 'btn primary big', onclick: () => { AudioEngine.ensure(); q.play(); } }, icon('play', 20), ' Play'),
-        q.refBtn ? h('button', { class: 'btn big', onclick: q.refBtn }, 'A') : null));
+        q.refBtn ? h('button', { class: 'btn big', onclick: q.refBtn }, 'A') : null),
+      q.refHint ? h('p', { class: 'small muted' }, q.refHint) : null);
     root.appendChild(card);
     if (typed) {
       const inp = h('input', { placeholder: level === 3 ? 'e.g. minor 3rd, P5' : level === 4 ? 'e.g. C#' : level === 5 ? 'e.g. I V vi IV' : 'e.g. minor, maj7', autocapitalize: 'off', autocomplete: 'off' });
@@ -2412,8 +2539,15 @@ function EarView() {
   root.appendChild(h('div', { class: 'card hero stack' },
     h('div', { class: 'tiny', style: { color: 'var(--accent2)' } }, 'Daily challenge'),
     h('h2', null, earDone ? `Done today: ${st.ear.dailyScore}/10` : '10 questions · ~2 min'),
-    h('p', { class: 'small muted' }, 'Mostly your current level, with some earlier ones mixed in. Use headphones or the Pulze.'),
+    h('p', { class: 'small muted' }, 'Your current level, some earlier ones, and single notes to name. Use headphones or the Pulze.'),
     h('button', { class: 'btn primary block', onclick: () => App.go('earRun', { daily: !earDone }) }, earDone ? 'Practice more' : 'Start (+15 XP)')));
+  const accN = earAccuracy('N');
+  root.appendChild(h('div', { class: 'card stack' },
+    h('div', { class: 'row' },
+      h('span', { class: 'bubble', style: { width: '44px', height: '44px', fontSize: '20px' } }, '🎵'),
+      h('div', { class: 'grow' }, h('h3', null, 'Name the note'), h('p', { class: 'small muted' }, 'A single note, no reference. The hardest one, and it’s fine to guess!')),
+      h('button', { class: 'btn sm', onclick: () => App.go('earRun', { levels: ['N'] }) }, 'Practice')),
+    h('div', { class: 'row' }, h('div', { class: 'bar good grow' }, h('i', { style: { width: (accN || 0) + '%' } })), h('span', { class: 'small muted' }, accN === null ? 'no data' : `${accN}% (last 20)`))));
   EAR_LEVELS.forEach(L => {
     const unlocked = L.id <= st.ear.unlocked;
     const acc = earAccuracy(L.id);
@@ -2434,7 +2568,7 @@ function EarView() {
 function EarRunView({ daily = false, levels }) {
   const st = Store.state;
   let lv = levels;
-  if (!lv) { const u = st.ear.unlocked; lv = u === 1 ? [1] : [u, u, u, u - 1, Math.max(1, u - 2)]; }
+  if (!lv) { const u = st.ear.unlocked; lv = u === 1 ? [1, 1, 'N'] : [u, u, u, u - 1, Math.max(1, u - 2), 'N', 'N']; }
   const root = h('div', { class: 'stack' });
   root.appendChild(topBar(daily ? 'Daily ear challenge' : 'Ear practice', { back: () => App.go('ear') }));
   const run = EarRun({ levels: lv, count: 10, daily, onDone: () => App.go(daily ? 'home' : 'ear') });
@@ -2626,7 +2760,7 @@ function ProgressView() {
       try { const d = JSON.parse(txt); delete d.exported; Store.state = { ...defaultState(), ...d }; Store.save(); UI.toast('Progress restored'); App.go('progress'); } catch (e) { UI.toast('That doesn’t look like a backup'); }
     } }, 'Restore progress backup'),
     h('button', { class: 'btn danger block', onclick: async () => { if (await UI.confirm('Reset all progress?', 'XP, lessons and stats will be erased. Recordings stay in the Journal.', 'Reset', true)) { Store.reset(); App.go('home'); } } }, 'Reset progress'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.0')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.1')));
   return root;
 }
 

@@ -480,8 +480,28 @@ function StudioView(cfg = {}, opts = {}) {
 }
 
 // ---------- Ear training ----------
+// Fretboard showing every place a note (or a pair of notes) lives, for the answer reveal
+function notePositionsBoard(pcs, rootPc, to = 12) {
+  const marks = [];
+  for (let st = 0; st < 6; st++) for (let f = 0; f <= to; f++) {
+    const pc = fretPc(st, f);
+    if (pcs.includes(pc)) marks.push({ s: st, f, label: noteName(pc), root: pc === rootPc });
+  }
+  return Fretboard({ from: 0, to, marks, fretWidth: 40, onTap: (s2, f2) => AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now(), { gain: 0.35 }) });
+}
+function howTo(title, ...els) { return h('div', { class: 'howto' }, h('div', { class: 'tiny' }, title), ...els); }
+
 function makeEarQuestion(level) {
   const now = () => AudioEngine.now() + 0.05;
+  if (level === 'N') {
+    // single note, no reference: guess the note
+    const m = randInt(52, 66), pc = mod12(m);
+    const playFn = () => { const t = now(); AudioEngine.pluck(m, t, { gain: 0.45 }); AudioEngine.pluck(m, t + 1.1, { gain: 0.35 }); };
+    const opts = shuffle([pc, ...shuffle([...Array(12).keys()].filter(x => x !== pc)).slice(0, 3)]).map(bothNames);
+    return { level, tag: 'Note', prompt: 'Which note is this?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: bothNames(pc),
+      refBtn: () => AudioEngine.pluck(57, AudioEngine.now(), { gain: 0.4 }), refHint: 'Stuck? Tap A to hear an A for comparison.',
+      show: () => howTo(`Where to play ${bothNames(pc)} (tap to hear)`, notePositionsBoard([pc], pc)) };
+  }
   if (level === 1 || level === 2) {
     const types = level === 1 ? ['maj', 'min'] : ['maj', 'min', 'dom7', 'maj7', 'm7'];
     const type = pick(types), rootPc = randInt(0, 11);
@@ -489,7 +509,8 @@ function makeEarQuestion(level) {
     const playFn = () => { const t = now(); AudioEngine.strum(vox, t, { gain: 0.3, spread: 0.03 }); vox.forEach((m, i) => AudioEngine.pluck(m, t + 1.3 + i * 0.22, { gain: 0.25, dur: 1.6 })); };
     const label = t => CHORD_TYPES[t].name;
     return { level, prompt: level === 1 ? 'Major or minor?' : 'Which chord type?', play: playFn, options: types.map(label), answer: label(type),
-      accept: v => matchChordType(v) === type, reveal: `${chordName(rootPc, type)} (${label(type)})` };
+      accept: v => matchChordType(v) === type, reveal: `${chordName(rootPc, type)} (${label(type)})`,
+      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type))) };
   }
   if (level === 3) {
     const pool = EAR_INTERVAL_SET.slice(0, Store.state.ear.typed[3] ? 9 : 7);
@@ -497,21 +518,38 @@ function makeEarQuestion(level) {
     const info = INTERVALS.find(x => x.semi === iv);
     const playFn = () => { const t = now(); AudioEngine.pluck(r, t, { gain: 0.4 }); AudioEngine.pluck(r + iv, t + 0.7, { gain: 0.4 }); AudioEngine.pluck(r, t + 1.6, { gain: 0.3 }); AudioEngine.pluck(r + iv, t + 1.6, { gain: 0.3 }); };
     const opts = shuffle([iv, ...shuffle(pool.filter(x => x !== iv)).slice(0, 3)]).map(x => INTERVALS.find(y => y.semi === x).name);
-    return { level, prompt: 'Which interval?', play: playFn, options: opts, answer: info.name, accept: v => matchInterval(v) === iv, reveal: `${info.name} (${iv} half steps)` };
+    // show the shape: root on low E or A string
+    const show = () => {
+      let st = r < 45 ? 0 : (r - 45 <= 9 ? 1 : 2);
+      const f = r - STRINGS[st].midi;
+      const target = r + iv;
+      let best = null;
+      for (let s2 = st; s2 < 6; s2++) { const f2 = target - STRINGS[s2].midi; if (f2 >= 0 && f2 <= 15 && (!best || Math.abs(f2 - f) < Math.abs(best.f - f))) best = { s: s2, f: f2 }; }
+      const marks = [{ s: st, f, label: 'R', root: true }];
+      if (best) marks.push({ s: best.s, f: best.f, label: info.short });
+      const lo = Math.max(0, Math.min(f, best ? best.f : f) - 2), hi = Math.min(15, Math.max(f, best ? best.f : f) + 2);
+      const fb = Fretboard({ from: lo, to: Math.max(hi, lo + 5), marks, onTap: (s2, f2) => AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now(), { gain: 0.35 }) });
+      return howTo(`${info.name}: ${noteName(r)} → ${noteName(r + iv)} (tap to hear)`, fb);
+    };
+    return { level, prompt: 'Which interval?', play: playFn, options: opts, answer: info.name, accept: v => matchInterval(v) === iv, reveal: `${info.name} (${iv} half steps)`, show };
   }
   if (level === 4) {
     const ref = 57; // A3
     const off = randInt(1, 11), pc = mod12(9 + off);
     const playFn = () => { const t = now(); AudioEngine.pluck(ref, t, { gain: 0.4 }); AudioEngine.pluck(ref + off, t + 1.0, { gain: 0.45 }); };
     const opts = shuffle([pc, ...shuffle([...Array(12).keys()].filter(x => x !== pc && x !== 9)).slice(0, 3)]).map(bothNames);
-    return { level, prompt: 'First note is A. What is the second note?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: bothNames(pc), refBtn: () => AudioEngine.pluck(ref, AudioEngine.now(), { gain: 0.4 }) };
+    return { level, prompt: 'First note is A. What is the second note?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: bothNames(pc),
+      refBtn: () => AudioEngine.pluck(ref, AudioEngine.now(), { gain: 0.4 }),
+      show: () => howTo(`A (gold) and ${bothNames(pc)} on the neck`, notePositionsBoard([9, pc], 9)) };
   }
   // level 5: progressions
   const prog = pick(PROGRESSIONS), keyPc = randInt(0, 11);
   const playFn = () => { const t = now(); prog.steps.forEach(([o, ty], i) => AudioEngine.strum(chordVoicing(mod12(keyPc + o), ty), t + i * 1.1, { gain: 0.28, spread: 0.025, cut: 1.0 })); };
   const opts = shuffle([prog, ...shuffle(PROGRESSIONS.filter(p => p !== prog)).slice(0, 3)]).map(p => p.name);
+  const fl = [5, 10, 3, 8, 1].includes(keyPc);
   return { level, prompt: 'Which progression?', play: playFn, options: opts, answer: prog.name,
-    accept: v => normProg(v) === normProg(prog.name), reveal: prog.name + ' in ' + noteName(keyPc) };
+    accept: v => normProg(v) === normProg(prog.name), reveal: prog.name + ' in ' + noteName(keyPc, fl),
+    show: () => howTo('The chords (tap to hear)', h('div', { class: 'chordrow' }, prog.steps.map(([o, ty]) => ChordDiagram(mod12(keyPc + o), ty, { small: true, label: chordName(mod12(keyPc + o), ty, fl) })))) };
 }
 function matchChordType(v) {
   const x = v.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -539,7 +577,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
     const q = makeEarQuestion(level);
     const typed = Store.state.ear.typedAvail?.[level] && Store.state.ear.typed[level];
     root.innerHTML = '';
-    root.appendChild(h('div', { class: 'row between' }, h('div', { class: 'tiny' }, `${daily ? 'Daily ear challenge' : 'Ear practice'} · ${n + 1}/${count}`), h('div', { class: 'badge' }, `L${level} · ${correct} ✓`)));
+    root.appendChild(h('div', { class: 'row between' }, h('div', { class: 'tiny' }, `${daily ? 'Daily ear challenge' : 'Ear practice'} · ${n + 1}/${count}`), h('div', { class: 'badge' }, `${q.tag || 'L' + level} · ${correct} ✓`)));
     let answered = false;
     const fbBox = h('div');
     function result(ok, chosenBtn) {
@@ -550,12 +588,15 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
       fbBox.appendChild(h('div', { class: 'row', style: { marginTop: '10px' } },
         h('button', { class: 'btn grow', onclick: () => q.play() }, 'Hear again'),
         h('button', { class: 'btn primary grow', onclick: () => { n++; nextQ(); } }, 'Next')));
+      if (q.show) { try { fbBox.appendChild(q.show()); } catch (e) { console.error(e); } }
+      setTimeout(() => fbBox.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
     }
     const card = h('div', { class: 'card stack center' },
       h('h2', null, q.prompt),
       h('div', { class: 'row', style: { justifyContent: 'center' } },
         h('button', { class: 'btn primary big', onclick: () => { AudioEngine.ensure(); q.play(); } }, icon('play', 20), ' Play'),
-        q.refBtn ? h('button', { class: 'btn big', onclick: q.refBtn }, 'A') : null));
+        q.refBtn ? h('button', { class: 'btn big', onclick: q.refBtn }, 'A') : null),
+      q.refHint ? h('p', { class: 'small muted' }, q.refHint) : null);
     root.appendChild(card);
     if (typed) {
       const inp = h('input', { placeholder: level === 3 ? 'e.g. minor 3rd, P5' : level === 4 ? 'e.g. C#' : level === 5 ? 'e.g. I V vi IV' : 'e.g. minor, maj7', autocapitalize: 'off', autocomplete: 'off' });

@@ -256,3 +256,11 @@ input, select { border-radius: 18px; background: rgba(0,0,0,.3); border: 1px sol
 .lessoncard { min-height: 240px; }
 .toggle { box-shadow: inset 0 2px 4px rgba(0,0,0,.35); }
 .toggle::after { box-shadow: 0 2px 5px rgba(0,0,0,.35); }
+.chordbox { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 8px 6px; border-radius: 22px; background: rgba(0,0,0,.25); cursor: pointer; }
+.chordbox b { font-size: 18px; }
+.chordrow { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.howto { margin-top: 12px; text-align: center; }
+.howto .tiny { margin-bottom: 8px; }
+svg.fb .mark { pointer-events: none; }
+svg.fb .ripple { pointer-events: none; animation: ripple .45s ease-out forwards; }
+@keyframes ripple { from { opacity: .7; } to { opacity: 0; } }

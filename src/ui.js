@@ -93,7 +93,12 @@ function Fretboard(opts) {
     for (let st = 0; st < 6; st++) for (const f of fs) {
       const cx = fretX(f), w = f === 0 ? openW : fw;
       const r = s('rect', { class: 'cell', x: cx - w / 2, y: yOf(st) - sh / 2, width: w, height: sh });
-      r.addEventListener('pointerdown', e => { e.preventDefault(); opts.onTap(st, f); });
+      r.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        const rp = s('circle', { class: 'ripple', cx, cy: yOf(st), r: 17, fill: 'none', stroke: '#ffcf7a', 'stroke-width': 3 });
+        svg.appendChild(rp); setTimeout(() => rp.remove(), 480);
+        opts.onTap(st, f);
+      });
       svg.appendChild(r);
     }
   }
@@ -164,4 +169,40 @@ function toggleEl(on, onchange) {
   const t = h('button', { class: 'toggle' + (on ? ' on' : ''), role: 'switch' });
   t.addEventListener('click', () => { on = !on; t.classList.toggle('on', on); onchange(on); });
   return t;
+}
+
+// ---------- Chord box diagram ----------
+function ChordDiagram(rootPc, type, opts = {}) {
+  const { frets, fingers, barre } = chordShape(rootPc, type);
+  const played = frets.filter(f => f > 0);
+  const minF = played.length ? Math.min(...played) : 1;
+  const maxF = played.length ? Math.max(...played) : 1;
+  const start = maxF <= 4 ? 1 : minF;
+  const nF = Math.max(4, maxF - start + 1);
+  const sw = opts.small ? 18 : 24, fh = opts.small ? 22 : 30, padX = 26, padT = 34;
+  const W = padX * 2 + sw * 5, H = padT + fh * nF + 14;
+  const svg = s('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
+  const x = i => padX + i * sw, y = f => padT + (f - start + 0.5) * fh;
+  svg.appendChild(s('rect', { x: x(0), y: padT, width: sw * 5, height: fh * nF, rx: 4, fill: '#2a1f17' }));
+  for (let k = 0; k <= nF; k++) svg.appendChild(s('line', { x1: x(0), x2: x(5), y1: padT + k * fh, y2: padT + k * fh, stroke: k === 0 && start === 1 ? '#e8dcc8' : '#8a7a66', 'stroke-width': k === 0 && start === 1 ? 5 : 1.5 }));
+  for (let i = 0; i < 6; i++) svg.appendChild(s('line', { x1: x(i), x2: x(i), y1: padT, y2: padT + fh * nF, stroke: '#cfc3b1', 'stroke-width': 1 + (5 - i) * 0.25 }));
+  if (start > 1) svg.appendChild(s('text', { x: x(5) + 8, y: y(start) + 4, 'font-size': 11, fill: '#f2a541', 'font-weight': 700 }, start + 'fr'));
+  if (barre && barre >= start) {
+    const idx = frets.map((f, i) => f === barre ? i : -1).filter(i => i >= 0);
+    if (idx.length > 1) svg.appendChild(s('rect', { x: x(idx[0]) - 9, y: y(barre) - 9, width: x(idx[idx.length - 1]) - x(idx[0]) + 18, height: 18, rx: 9, fill: '#f2a541' }));
+  }
+  frets.forEach((f, i) => {
+    if (f === -1) svg.appendChild(s('text', { x: x(i), y: padT - 10, 'font-size': 13, fill: '#ef5d5d', 'text-anchor': 'middle', 'font-weight': 800 }, '×'));
+    else if (f === 0) svg.appendChild(s('circle', { cx: x(i), cy: padT - 14, r: 5, fill: 'none', stroke: '#4fc18f', 'stroke-width': 2 }));
+    else {
+      const isRoot = fretPc(i, f) === mod12(rootPc);
+      svg.appendChild(s('circle', { cx: x(i), cy: y(f), r: opts.small ? 8 : 10, fill: isRoot ? '#f2a541' : '#f4ede4', stroke: '#120f0d' }));
+      if (fingers[i]) svg.appendChild(s('text', { x: x(i), y: y(f) + 4, 'font-size': opts.small ? 10 : 12, 'font-weight': 800, fill: '#241505', 'text-anchor': 'middle' }, fingers[i]));
+    }
+  });
+  const wrap = h('div', { class: 'chordbox', onclick: () => {
+    const t = AudioEngine.now();
+    frets.forEach((f, i) => { if (f >= 0) AudioEngine.pluck(fretMidi(i, f), t + i * 0.03, { gain: 0.22 }); });
+  } }, h('b', null, opts.label || chordName(rootPc, type)), svg);
+  return wrap;
 }
