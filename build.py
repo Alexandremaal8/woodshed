@@ -1,6 +1,6 @@
 import pathlib, json
 src = pathlib.Path('src'); dist = pathlib.Path('.')
-VERSION = '1.7.1'
+VERSION = '1.7.2'
 css = (src/'styles.css').read_text()
 js = '\n'.join((src/f).read_text() for f in ['music.js','audio.js','content.js','content2.js','store.js','ui.js','components.js','views.js','library.js','teacher.js','app.js'])
 html = f'''<!DOCTYPE html>
@@ -38,7 +38,7 @@ self.addEventListener('activate', e => {{ e.waitUntil(caches.keys().then(ks => P
 // Network first (so updates arrive), cache fallback (so it works offline)
 self.addEventListener('fetch', e => {{
   if (e.request.method !== 'GET') return;
-  e.respondWith(fetch(e.request).then(r => {{ const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; }}).catch(() => caches.match(e.request).then(r => r || caches.match('index.html'))));
+  e.respondWith(fetch(e.request, {{ cache: 'no-cache' }}).then(r => {{ const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; }}).catch(() => caches.match(e.request).then(r => r || caches.match('index.html'))));
 }});
 '''
 (dist/'sw.js').write_text(sw)
