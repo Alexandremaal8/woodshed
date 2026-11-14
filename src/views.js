@@ -324,10 +324,13 @@ function EarRunView({ daily = false, levels }) {
 }
 
 // ---------- STUDIO / CHALLENGE ----------
-function StudioScreen() {
+function StudioScreen(params = {}) {
   const root = h('div', { class: 'stack' });
   root.appendChild(topBar('Studio', { right: levelChip() }));
-  const sv = StudioView({}, { mode: 'studio' });
+  const cfg = {};
+  if (params.key) cfg.key = params.key;
+  if (params.scale) cfg.scale = params.scale;
+  const sv = StudioView(cfg, { mode: 'studio' });
   root.appendChild(sv);
   root.cleanup = sv.cleanup;
   return root;
@@ -507,6 +510,6 @@ function ProgressView() {
       try { const d = JSON.parse(txt); delete d.exported; Store.state = { ...defaultState(), ...d }; Store.save(); UI.toast('Progress restored'); App.go('progress'); } catch (e) { UI.toast('That doesn’t look like a backup'); }
     } }, 'Restore progress backup'),
     h('button', { class: 'btn danger block', onclick: async () => { if (await UI.confirm('Reset all progress?', 'XP, lessons and stats will be erased. Recordings stay in the Journal.', 'Reset', true)) { Store.reset(); App.go('home'); } } }, 'Reset progress'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.2')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.3')));
   return root;
 }

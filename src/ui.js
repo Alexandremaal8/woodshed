@@ -41,6 +41,7 @@ const ICONS = {
   share: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4M12 2v14"/>',
   trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
   edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  index: '<rect x="3" y="3" width="7.5" height="7.5" rx="2.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5"/><circle cx="17.25" cy="17.25" r="3.9"/>',
   replay: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
 };
 function icon(name, size = 22, fill = false) {
@@ -173,7 +174,7 @@ function toggleEl(on, onchange) {
 
 // ---------- Chord box diagram ----------
 function ChordDiagram(rootPc, type, opts = {}) {
-  const { frets, fingers, barre } = chordShape(rootPc, type);
+  const { frets, fingers, barre } = opts.shape || chordShape(rootPc, type);
   const played = frets.filter(f => f > 0);
   const minF = played.length ? Math.min(...played) : 1;
   const maxF = played.length ? Math.max(...played) : 1;
@@ -201,7 +202,7 @@ function ChordDiagram(rootPc, type, opts = {}) {
     }
   });
   const wrap = h('div', { class: 'chordbox', onclick: () => {
-    AudioEngine.strum(shapeMidis(rootPc, type), AudioEngine.now() + 0.02, { gain: 0.32, spread: 0.035 });
-  } }, h('b', null, opts.label || chordName(rootPc, type)), svg);
+    AudioEngine.strum(frets.map((f, i) => f >= 0 ? fretMidi(i, f) : null).filter(x => x !== null), AudioEngine.now() + 0.02, { gain: 0.32, spread: 0.035 });
+  } }, h('b', null, opts.label || chordName(rootPc, type)), svg, opts.caption ? h('small', { class: 'muted', style: { fontSize: '11px' } }, opts.caption) : null);
   return wrap;
 }

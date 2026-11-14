@@ -127,21 +127,34 @@ const BARRE_SHAPES = {
   E: { maj: [0,2,2,1,0,0], min: [0,2,2,0,0,0], dom7: [0,2,0,1,0,0], maj7: [0,2,1,1,0,0], m7: [0,2,0,0,0,0], dim: [0,1,2,0,-99,-99] },
   A: { maj: [-99,0,2,2,2,0], min: [-99,0,2,2,1,0], dom7: [-99,0,2,0,2,0], maj7: [-99,0,2,1,2,0], m7: [-99,0,2,0,1,0], dim: [-99,0,1,2,1,-99] },
 };
-function chordShape(rootPc, type) {
-  const name = noteName(rootPc);
-  const open = OPEN_SHAPES[name + ':' + type];
-  if (open) return { frets: open.f, fingers: open.g };
-  const rE = mod12(rootPc - 4), rA = mod12(rootPc - 9);
-  const useE = rE <= rA;
-  const r = useE ? rE : rA;
-  const rel = BARRE_SHAPES[useE ? 'E' : 'A'][type];
+function barreShape(kind, rootPc, type) {
+  const r = kind === 'E' ? mod12(rootPc - 4) : mod12(rootPc - 9);
+  const rel = BARRE_SHAPES[kind][type];
   const frets = rel.map(x => x <= -50 ? -1 : r + x);
   const fingers = frets.map(() => 0);
   if (r > 0) frets.forEach((f, i) => { if (f === r) fingers[i] = 1; });
   const rest = frets.map((f, i) => ({ f, i })).filter(o => o.f > r).sort((a, b) => a.f - b.f || a.i - b.i);
   let next = r > 0 ? 2 : 1;
   rest.forEach(o => { fingers[o.i] = Math.min(4, next++); });
-  return { frets, fingers, barre: r > 0 ? r : 0 };
+  return { frets, fingers, barre: r > 0 ? r : 0, r, kind };
+}
+function chordShape(rootPc, type) {
+  const open = OPEN_SHAPES[noteName(rootPc) + ':' + type];
+  if (open) return { frets: open.f, fingers: open.g };
+  const e = barreShape('E', rootPc, type), a = barreShape('A', rootPc, type);
+  return e.r <= a.r ? e : a;
+}
+// Every useful way to play a chord: open shape (if any) + E-shape + A-shape
+function chordShapesAll(rootPc, type) {
+  const out = [];
+  const open = OPEN_SHAPES[noteName(rootPc) + ':' + type];
+  if (open) out.push({ frets: open.f, fingers: open.g, label: 'Open' });
+  for (const k of ['E', 'A']) {
+    const sh = barreShape(k, rootPc, type);
+    sh.label = sh.r === 0 ? 'Open' : `${k}-shape barre · fret ${sh.r}`;
+    if (!out.some(o => o.frets.join() === sh.frets.join())) out.push(sh);
+  }
+  return out;
 }
 
 // Real guitar notes of the chord shape (what the diagram shows)
@@ -162,3 +175,19 @@ function parseChord(v) {
   return type ? { pc, type } : null;
 }
 const EAR_CHORD_POOL = [[0,'maj'],[2,'maj'],[4,'maj'],[5,'maj'],[7,'maj'],[9,'maj'],[11,'maj'],[9,'min'],[4,'min'],[2,'min'],[11,'min']];
+
+// Correct spelling: the note `semi` half steps above rootName, written with the letter `steps` letters above
+const LETTERS = ['C','D','E','F','G','A','B'];
+const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function spell(rootName, semi, steps) {
+  const L = LETTERS[(LETTERS.indexOf(rootName[0]) + steps) % 7];
+  const target = mod12(pcOf(rootName) + semi);
+  let diff = mod12(target - LETTER_PC[L]); if (diff > 6) diff -= 12;
+  if (Math.abs(diff) > 1) return noteName(target, /b/.test(rootName) || rootName === 'F');
+  return L + (diff > 0 ? '#'.repeat(diff) : 'b'.repeat(-diff));
+}
+function degSteps(label) { const n = parseInt(String(label).replace(/[^0-9]/g, ''), 10); return (n - 1) % 7; }
+function spelledChordTones(rootName, type) {
+  const iv = CHORD_TYPES[type].iv, st = [0, 2, 4, 6];
+  return iv.map((s, i) => spell(rootName, s, st[i]));
+}

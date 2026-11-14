@@ -1,7 +1,7 @@
 // ---------- App shell & router ----------
 const App = {
   current: null, view: null,
-  tabs: [['home', 'Home', 'home'], ['learn', 'Learn', 'learn'], ['ear', 'Ear', 'ear'], ['studio', 'Studio', 'studio'], ['journal', 'Journal', 'journal']],
+  tabs: [['home', 'Home', 'home'], ['learn', 'Learn', 'learn'], ['index', 'Index', 'index'], ['ear', 'Ear', 'ear'], ['studio', 'Studio', 'studio'], ['journal', 'Journal', 'journal']],
   routes: {
     home: { view: HomeView, tab: 'home' },
     session: { view: SessionView, full: true },
@@ -9,6 +9,8 @@ const App = {
     chapter: { view: ChapterView, tab: 'learn' },
     lesson: { view: LessonView, tab: 'learn' },
     review: { view: ReviewView, tab: 'learn' },
+    index: { view: IndexView, tab: 'index' },
+    note: { view: NoteView, tab: 'index' },
     ear: { view: EarView, tab: 'ear' },
     earRun: { view: EarRunView, tab: 'ear' },
     studio: { view: StudioScreen, tab: 'studio' },
@@ -34,7 +36,7 @@ const App = {
     let bar = document.querySelector('.tabs');
     if (r.full) { if (bar) bar.style.display = 'none'; return; }
     if (!bar) {
-      bar = h('nav', { class: 'tabs' }, h('i', { class: 'tabpill' }));
+      bar = h('nav', { class: 'tabs' }, h('i', { class: 'tabpill', style: { width: (100 / this.tabs.length) + '%' } }));
       this.tabs.forEach(([k, label, ic]) => bar.appendChild(h('button', { 'data-tab': k, onclick: () => { if (this.current !== k) this.go(k); } }, icon(ic, 24), h('span', null, label))));
       document.body.appendChild(bar);
     }
@@ -46,7 +48,7 @@ const App = {
 };
 
 // ---------- touch feel: bubble ripple + soft pop ----------
-const PRESSABLE = '.btn, .chip, .tile, .option, .card.tap, .tabs button, .iconbtn, .levelchip, .seg button, .lessonrow, .recbtn, .chordbox, .rec .play';
+const PRESSABLE = '.notebubble, .keychip, .progrow, .friendrow, .btn, .chip, .tile, .option, .card.tap, .tabs button, .iconbtn, .levelchip, .seg button, .lessonrow, .recbtn, .chordbox, .rec .play';
 document.addEventListener('pointerdown', e => {
   const el = e.target.closest(PRESSABLE);
   if (!el || el.disabled) return;

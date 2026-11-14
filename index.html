@@ -318,6 +318,38 @@ svg.fb .ripple { pointer-events: none; animation: ripple .45s ease-out forwards;
 .tabs button.on svg { transform: translateY(-2px) scale(1.12); }
 .tabs button { z-index: 1; }
 .chips .chip.on, .seg button.on { animation: pop .35s cubic-bezier(.34,1.8,.5,1); }
+
+/* ===================== Index ===================== */
+.notegrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.notebubble { aspect-ratio: 1; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 35% 28%, #ffe0a6 0%, #f6a83e 55%, #c96f12 100%);
+  box-shadow: inset 0 3px 4px rgba(255,255,255,.45), inset 0 -6px 10px rgba(120,50,0,.35), 0 8px 18px rgba(242,150,50,.25); color: #2a1704; }
+.notebubble.acc { background: radial-gradient(circle at 35% 28%, #5f4a38 0%, #3a2e25 60%, #241c16 100%); color: var(--text);
+  box-shadow: inset 0 3px 4px rgba(255,255,255,.15), inset 0 -6px 10px rgba(0,0,0,.4), 0 8px 18px rgba(0,0,0,.35); }
+.notebubble b { font-size: 24px; font-weight: 850; letter-spacing: -0.02em; }
+.notebubble small { font-size: 11px; opacity: .7; font-weight: 700; }
+.notebubble:active { transform: scale(.88); }
+.notehero { font-size: 64px; font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
+.scrollchips { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 4px 16px 8px; scrollbar-width: none; }
+.scrollchips::-webkit-scrollbar { display: none; }
+.scrollchips .chip { flex-shrink: 0; }
+.scrollrow { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; }
+.scrollrow::-webkit-scrollbar { display: none; }
+.scrollrow .chordbox { flex-shrink: 0; }
+.degrow { display: flex; gap: 6px; flex-wrap: wrap; }
+.deg { min-width: 44px; padding: 8px 6px; border-radius: 16px; background: rgba(255,255,255,.06); text-align: center; display: flex; flex-direction: column; }
+.deg b { font-size: 16px; } .deg small { font-size: 11px; color: var(--muted); }
+.deg.root { background: linear-gradient(180deg, #ffd48a, #f2a541); color: #2a1704; } .deg.root small { color: #5a3a10; }
+.keygrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.keychip { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 18px; background: linear-gradient(180deg, #3a322b, #2a241f); box-shadow: inset 0 1.5px 0 rgba(255,255,255,.1), 0 3px 8px rgba(0,0,0,.25); position: relative; overflow: hidden; transition: transform .35s cubic-bezier(.34,1.8,.5,1); }
+.keychip:active { transform: scale(.9); transition-duration: .08s; }
+.keychip small { font-size: 11px; color: var(--accent2); font-weight: 700; } .keychip b { font-size: 16px; }
+.progrow, .friendrow { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 20px; background: rgba(255,255,255,.05); position: relative; overflow: hidden; transition: transform .35s cubic-bezier(.34,1.8,.5,1); }
+.progrow { justify-content: space-between; }
+.progrow:active, .friendrow:active { transform: scale(.97); transition-duration: .08s; }
+.swap { animation: floatin .35s cubic-bezier(.2,.9,.3,1.15) both; }
+.tabs button span { font-size: 10.5px; }
+.notebubble { position: relative; overflow: hidden; transition: transform .35s cubic-bezier(.34,1.8,.5,1); }
 </style>
 </head>
 <body>
@@ -452,21 +484,34 @@ const BARRE_SHAPES = {
   E: { maj: [0,2,2,1,0,0], min: [0,2,2,0,0,0], dom7: [0,2,0,1,0,0], maj7: [0,2,1,1,0,0], m7: [0,2,0,0,0,0], dim: [0,1,2,0,-99,-99] },
   A: { maj: [-99,0,2,2,2,0], min: [-99,0,2,2,1,0], dom7: [-99,0,2,0,2,0], maj7: [-99,0,2,1,2,0], m7: [-99,0,2,0,1,0], dim: [-99,0,1,2,1,-99] },
 };
-function chordShape(rootPc, type) {
-  const name = noteName(rootPc);
-  const open = OPEN_SHAPES[name + ':' + type];
-  if (open) return { frets: open.f, fingers: open.g };
-  const rE = mod12(rootPc - 4), rA = mod12(rootPc - 9);
-  const useE = rE <= rA;
-  const r = useE ? rE : rA;
-  const rel = BARRE_SHAPES[useE ? 'E' : 'A'][type];
+function barreShape(kind, rootPc, type) {
+  const r = kind === 'E' ? mod12(rootPc - 4) : mod12(rootPc - 9);
+  const rel = BARRE_SHAPES[kind][type];
   const frets = rel.map(x => x <= -50 ? -1 : r + x);
   const fingers = frets.map(() => 0);
   if (r > 0) frets.forEach((f, i) => { if (f === r) fingers[i] = 1; });
   const rest = frets.map((f, i) => ({ f, i })).filter(o => o.f > r).sort((a, b) => a.f - b.f || a.i - b.i);
   let next = r > 0 ? 2 : 1;
   rest.forEach(o => { fingers[o.i] = Math.min(4, next++); });
-  return { frets, fingers, barre: r > 0 ? r : 0 };
+  return { frets, fingers, barre: r > 0 ? r : 0, r, kind };
+}
+function chordShape(rootPc, type) {
+  const open = OPEN_SHAPES[noteName(rootPc) + ':' + type];
+  if (open) return { frets: open.f, fingers: open.g };
+  const e = barreShape('E', rootPc, type), a = barreShape('A', rootPc, type);
+  return e.r <= a.r ? e : a;
+}
+// Every useful way to play a chord: open shape (if any) + E-shape + A-shape
+function chordShapesAll(rootPc, type) {
+  const out = [];
+  const open = OPEN_SHAPES[noteName(rootPc) + ':' + type];
+  if (open) out.push({ frets: open.f, fingers: open.g, label: 'Open' });
+  for (const k of ['E', 'A']) {
+    const sh = barreShape(k, rootPc, type);
+    sh.label = sh.r === 0 ? 'Open' : `${k}-shape barre · fret ${sh.r}`;
+    if (!out.some(o => o.frets.join() === sh.frets.join())) out.push(sh);
+  }
+  return out;
 }
 
 // Real guitar notes of the chord shape (what the diagram shows)
@@ -487,6 +532,22 @@ function parseChord(v) {
   return type ? { pc, type } : null;
 }
 const EAR_CHORD_POOL = [[0,'maj'],[2,'maj'],[4,'maj'],[5,'maj'],[7,'maj'],[9,'maj'],[11,'maj'],[9,'min'],[4,'min'],[2,'min'],[11,'min']];
+
+// Correct spelling: the note `semi` half steps above rootName, written with the letter `steps` letters above
+const LETTERS = ['C','D','E','F','G','A','B'];
+const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function spell(rootName, semi, steps) {
+  const L = LETTERS[(LETTERS.indexOf(rootName[0]) + steps) % 7];
+  const target = mod12(pcOf(rootName) + semi);
+  let diff = mod12(target - LETTER_PC[L]); if (diff > 6) diff -= 12;
+  if (Math.abs(diff) > 1) return noteName(target, /b/.test(rootName) || rootName === 'F');
+  return L + (diff > 0 ? '#'.repeat(diff) : 'b'.repeat(-diff));
+}
+function degSteps(label) { const n = parseInt(String(label).replace(/[^0-9]/g, ''), 10); return (n - 1) % 7; }
+function spelledChordTones(rootName, type) {
+  const iv = CHORD_TYPES[type].iv, st = [0, 2, 4, 6];
+  return iv.map((s, i) => spell(rootName, s, st[i]));
+}
 
 // ---------- Audio engine: guitar synth, drums, backing tracks, recorder ----------
 const AudioEngine = (() => {
@@ -1537,6 +1598,7 @@ const ICONS = {
   share: '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M16 6l-4-4-4 4M12 2v14"/>',
   trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
   edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  index: '<rect x="3" y="3" width="7.5" height="7.5" rx="2.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2.5"/><circle cx="17.25" cy="17.25" r="3.9"/>',
   replay: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
 };
 function icon(name, size = 22, fill = false) {
@@ -1669,7 +1731,7 @@ function toggleEl(on, onchange) {
 
 // ---------- Chord box diagram ----------
 function ChordDiagram(rootPc, type, opts = {}) {
-  const { frets, fingers, barre } = chordShape(rootPc, type);
+  const { frets, fingers, barre } = opts.shape || chordShape(rootPc, type);
   const played = frets.filter(f => f > 0);
   const minF = played.length ? Math.min(...played) : 1;
   const maxF = played.length ? Math.max(...played) : 1;
@@ -1697,8 +1759,8 @@ function ChordDiagram(rootPc, type, opts = {}) {
     }
   });
   const wrap = h('div', { class: 'chordbox', onclick: () => {
-    AudioEngine.strum(shapeMidis(rootPc, type), AudioEngine.now() + 0.02, { gain: 0.32, spread: 0.035 });
-  } }, h('b', null, opts.label || chordName(rootPc, type)), svg);
+    AudioEngine.strum(frets.map((f, i) => f >= 0 ? fretMidi(i, f) : null).filter(x => x !== null), AudioEngine.now() + 0.02, { gain: 0.32, spread: 0.035 });
+  } }, h('b', null, opts.label || chordName(rootPc, type)), svg, opts.caption ? h('small', { class: 'muted', style: { fontSize: '11px' } }, opts.caption) : null);
   return wrap;
 }
 
@@ -2299,11 +2361,16 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
     root.appendChild(h('div', { class: 'row between' }, h('div', { class: 'tiny' }, `${daily ? 'Daily ear challenge' : 'Ear practice'} · ${n + 1}/${count}`), h('div', { class: 'badge' }, `${q.tag || 'L' + level} · ${correct} ✓`)));
     let answered = false;
     const fbBox = h('div');
-    function result(ok, chosenBtn) {
+    function result(ok, chosen) {
       if (answered) return; answered = true;
       if (ok) correct++;
       earRecord(level, ok);
-      fbBox.appendChild(h('div', { class: 'feedback ' + (ok ? 'ok' : 'no') }, h('b', null, ok ? 'Yes! ' : 'Answer: '), q.reveal));
+      let hint = null;
+      if (!ok && chosen && (level === 'N' || level === 4)) {
+        const cp = pcOf(String(chosen).split('/')[0]), ap = pcOf(String(q.answer).split('/')[0]);
+        if (cp >= 0) { let d = mod12(cp - ap); if (d > 6) d -= 12; hint = `You picked ${chosen}: ${Math.abs(d)} half step${Math.abs(d) > 1 ? 's' : ''} too ${d > 0 ? 'high' : 'low'}. ${Math.abs(d) <= 1 ? 'Very close!' : ''}`; }
+      }
+      fbBox.appendChild(h('div', { class: 'feedback ' + (ok ? 'ok' : 'no') }, h('b', null, ok ? 'Yes! ' : 'Answer: '), q.reveal, hint ? h('div', { class: 'small', style: { marginTop: '6px', color: 'var(--accent2)' } }, hint) : null));
       fbBox.appendChild(h('div', { class: 'row', style: { marginTop: '10px' } },
         h('button', { class: 'btn grow', onclick: () => q.play() }, 'Hear again'),
         h('button', { class: 'btn primary grow', onclick: () => { n++; nextQ(); } }, 'Next')));
@@ -2319,7 +2386,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
     root.appendChild(card);
     if (typed) {
       const inp = h('input', { placeholder: level === 3 ? 'e.g. minor 3rd, P5' : level === 4 || level === 'N' ? 'e.g. C#' : level === 'C' ? 'e.g. G, Am, Bb' : level === 5 ? 'e.g. I V vi IV' : 'e.g. minor, maj7', autocapitalize: 'off', autocomplete: 'off' });
-      root.appendChild(h('form', { class: 'row', onsubmit: e => { e.preventDefault(); if (!inp.value.trim()) return; result(q.accept(inp.value)); } }, inp, h('button', { class: 'btn primary', type: 'submit' }, 'OK')));
+      root.appendChild(h('form', { class: 'row', onsubmit: e => { e.preventDefault(); if (!inp.value.trim()) return; result(q.accept(inp.value), inp.value.trim()); } }, inp, h('button', { class: 'btn primary', type: 'submit' }, 'OK')));
       root.appendChild(h('p', { class: 'muted small center' }, 'Typed mode is on. You can turn it off in the Ear tab.'));
     } else {
       const list = h('div', { class: 'col' });
@@ -2328,7 +2395,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
         const ok = o === q.answer;
         e.target.classList.add(ok ? 'right' : 'wrong');
         if (!ok) [...list.children].forEach(b => { if (b.textContent === q.answer) b.classList.add('right'); });
-        result(ok);
+        result(ok, o);
       } }, o)));
       root.appendChild(list);
     }
@@ -2676,10 +2743,13 @@ function EarRunView({ daily = false, levels }) {
 }
 
 // ---------- STUDIO / CHALLENGE ----------
-function StudioScreen() {
+function StudioScreen(params = {}) {
   const root = h('div', { class: 'stack' });
   root.appendChild(topBar('Studio', { right: levelChip() }));
-  const sv = StudioView({}, { mode: 'studio' });
+  const cfg = {};
+  if (params.key) cfg.key = params.key;
+  if (params.scale) cfg.scale = params.scale;
+  const sv = StudioView(cfg, { mode: 'studio' });
   root.appendChild(sv);
   root.cleanup = sv.cleanup;
   return root;
@@ -2859,14 +2929,180 @@ function ProgressView() {
       try { const d = JSON.parse(txt); delete d.exported; Store.state = { ...defaultState(), ...d }; Store.save(); UI.toast('Progress restored'); App.go('progress'); } catch (e) { UI.toast('That doesn’t look like a backup'); }
     } }, 'Restore progress backup'),
     h('button', { class: 'btn danger block', onclick: async () => { if (await UI.confirm('Reset all progress?', 'XP, lessons and stats will be erased. Recordings stay in the Journal.', 'Reset', true)) { Store.reset(); App.go('home'); } } }, 'Reset progress'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.2')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.3')));
+  return root;
+}
+
+// ---------- Note index ----------
+const NICE_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const ALT_NAMES  = ['', 'Db', '', 'D#', '', '', 'Gb', '', 'G#', '', 'A#', ''];
+const FLAT_PCS = new Set([3, 5, 8, 10]); // Eb, F, Ab, Bb read better with flats
+function niceName(pc) { return NICE_NAMES[mod12(pc)]; }
+function keyNameFor(pc) { return KEYS.find(k => pcOf(k) === mod12(pc)) || niceName(pc); }
+
+function IndexView() {
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Index', { right: levelChip() }));
+  root.appendChild(h('p', { class: 'muted' }, 'Every note, with everything about it: where it is, its chords, scales and the notes it goes well with.'));
+  root.appendChild(h('div', { class: 'notegrid' }, [...Array(12).keys()].map(pc =>
+    h('button', { class: 'notebubble' + (ALT_NAMES[pc] ? ' acc' : ''), onclick: () => App.go('note', { pc }) },
+      h('b', null, niceName(pc)), ALT_NAMES[pc] ? h('small', null, ALT_NAMES[pc]) : null))));
+  root.appendChild(h('div', { class: 'card stack' },
+    h('div', { class: 'tiny' }, 'Quick reference'),
+    h('div', { class: 'row between' }, h('span', null, 'Open strings'), h('b', null, 'E A D G B E')),
+    h('div', { class: 'row between' }, h('span', null, 'No note between'), h('b', null, 'B–C and E–F')),
+    h('div', { class: 'row between' }, h('span', null, 'Major scale'), h('b', null, 'W W H W W W H')),
+    h('div', { class: 'row between' }, h('span', null, 'Minor pentatonic'), h('b', null, '1 b3 4 5 b7')),
+    h('div', { class: 'row between' }, h('span', null, 'Relative minor'), h('b', null, '3 frets below the major'))));
+  return root;
+}
+
+function NoteView({ pc }) {
+  pc = mod12(+pc);
+  const fl = FLAT_PCS.has(pc);
+  const nm = niceName(pc);
+  const st = Store.state;
+  const root = h('div', { class: 'stack' });
+  const playNote = () => { const t = AudioEngine.now(); AudioEngine.pluck(48 + pc, t, { gain: 0.4 }); AudioEngine.pluck(60 + pc, t + 0.45, { gain: 0.35 }); };
+
+  root.appendChild(topBar('', { back: () => App.go('index') }));
+  // prev / next note navigation + hero
+  root.appendChild(h('div', { class: 'card hero center stack' },
+    h('div', { class: 'row between' },
+      h('button', { class: 'iconbtn', onclick: () => App.go('note', { pc: mod12(pc - 1) }) }, '‹'),
+      h('div', null, h('div', { class: 'notehero' }, nm), ALT_NAMES[pc] ? h('div', { class: 'muted small' }, `also called ${ALT_NAMES[pc]}`) : h('div', { class: 'muted small' }, 'natural note')),
+      h('button', { class: 'iconbtn', onclick: () => App.go('note', { pc: mod12(pc + 1) }) }, '›')),
+    h('div', { class: 'row', style: { justifyContent: 'center' } },
+      h('button', { class: 'btn primary', onclick: playNote }, icon('play', 18), ' Hear it'),
+      h('button', { class: 'btn', onclick: () => App.go('studio', { key: keyNameFor(pc) }) }, '🎛 Jam in ' + nm))));
+
+  // sections as bubble tabs
+  const sections = [['where', '📍 Where'], ['chords', '🎸 Chords'], ['scales', '🪜 Scales'], ['key', '🔑 Key'], ['friends', '🤝 Friends']];
+  let sec = st.lastNoteSection || 'where';
+  const seg = h('div', { class: 'chips scrollchips' });
+  const body = h('div', { class: 'stack' });
+  root.append(seg, body);
+
+  function renderSeg() {
+    seg.innerHTML = '';
+    sections.forEach(([k, l]) => seg.appendChild(h('button', { class: 'chip' + (sec === k ? ' on' : ''), onclick: () => { sec = k; st.lastNoteSection = k; Store.save(); renderSeg(); renderBody(); } }, l)));
+  }
+  const tapPlay = (s2, f2) => AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now(), { gain: 0.35 });
+
+  function renderBody() {
+    body.innerHTML = '';
+    body.classList.remove('swap'); void body.offsetWidth; body.classList.add('swap');
+    if (sec === 'where') {
+      const marks = [];
+      for (let s2 = 0; s2 < 6; s2++) for (let f = 0; f <= 15; f++) if (fretPc(s2, f) === pc) marks.push({ s: s2, f, label: nm, root: true });
+      const fb = Fretboard({ from: 0, to: 15, marks, fretWidth: 42, onTap: tapPlay });
+      const list = [];
+      for (let s2 = 5; s2 >= 0; s2--) {
+        const fs = []; for (let f = 0; f <= 12; f++) if (fretPc(s2, f) === pc) fs.push(f);
+        list.push(h('div', { class: 'row between' }, h('span', null, `${STRINGS[s2].label} string`), h('b', null, fs.map(f => f === 0 ? 'open' : 'fret ' + f).join(' · '))));
+      }
+      body.append(
+        h('div', { class: 'card stack' }, h('div', { class: 'tiny' }, `Every ${nm} on the neck (tap to hear)`), fb),
+        h('div', { class: 'card stack' }, h('div', { class: 'tiny' }, 'String by string (frets 0–12)'), ...list,
+          h('p', { class: 'small muted' }, 'Tip: find it on the low E or A string, then use the octave shapes (2 strings over, 2 frets up; 3 frets when you cross the B string).')));
+    }
+    else if (sec === 'chords') {
+      const groups = [['maj', 'Major'], ['min', 'Minor'], ['dom7', 'Dominant 7'], ['maj7', 'Major 7'], ['m7', 'Minor 7']];
+      groups.forEach(([type, title]) => {
+        const shapes = chordShapesAll(pc, type);
+        const notes = spelledChordTones(nm, type).join(' · ');
+        body.appendChild(h('div', { class: 'card stack' },
+          h('div', { class: 'row between' }, h('h3', null, nm + CHORD_TYPES[type].sym), h('span', { class: 'small muted' }, title)),
+          h('p', { class: 'small muted' }, `Notes: ${notes}`),
+          h('div', { class: 'chordrow scrollrow' }, shapes.map(sh => ChordDiagram(pc, type, { shape: sh, small: true, label: nm + CHORD_TYPES[type].sym, caption: sh.label }))),
+          shapes.length > 2 ? h('p', { class: 'small muted' }, `${shapes.length} ways to play it · swipe →`) : null));
+      });
+      body.appendChild(h('p', { class: 'small muted center' }, 'Tap a chord to hear it. Gold dots are the root.'));
+    }
+    else if (sec === 'scales') {
+      let scale = st.lastNoteScale || 'minorPent';
+      const chips = h('div', { class: 'chips scrollchips' });
+      const holder = h('div', { class: 'stack' });
+      const draw = () => {
+        chips.innerHTML = '';
+        ['minorPent', 'majorPent', 'blues', 'major', 'minor', 'dorian', 'mixolydian'].forEach(k => chips.appendChild(h('button', { class: 'chip' + (k === scale ? ' on' : ''), onclick: () => { scale = k; st.lastNoteScale = k; Store.save(); draw(); } }, SCALES[k].name)));
+        holder.innerHTML = '';
+        const sc = SCALES[scale];
+        const pcs = scalePcs(pc, scale);
+        const names = sc.steps.map((s2, i) => spell(nm, s2, degSteps(sc.degrees[i])));
+        const marks = marksFor(pcs, pc, 0, 15, [0,1,2,3,4,5], p => names[pcs.indexOf(p)]);
+        const fb = Fretboard({ from: 0, to: 15, marks, fretWidth: 42, onTap: tapPlay });
+        const firstRoot = (() => { for (let f = 3; f <= 12; f++) if (fretPc(0, f) === pc) return f; return 5; })();
+        fb.scrollToFret(firstRoot + 2);
+        holder.append(
+          h('div', { class: 'card stack' },
+            h('div', { class: 'row between' }, h('h3', null, `${nm} ${sc.name.toLowerCase()}`), h('button', { class: 'btn sm', onclick: () => {
+              const t = AudioEngine.now(); const base = 52 + mod12(pc - 4);
+              const seq = [...sc.steps, 12]; seq.forEach((s2, i) => AudioEngine.pluck(base + s2, t + i * 0.28, { gain: 0.35, dur: 1.2 }));
+            } }, icon('play', 14), ' Play')),
+            h('div', { class: 'degrow' }, pcs.map((p, i) => h('div', { class: 'deg' + (i === 0 ? ' root' : '') }, h('b', null, names[i]), h('small', null, sc.degrees[i])))),
+            fb,
+            h('p', { class: 'small muted' }, 'Gold = root. Scroll the neck, tap any dot to hear it.')),
+          h('button', { class: 'btn primary block', onclick: () => App.go('studio', { key: keyNameFor(pc), scale }) }, `🎛 Jam with ${nm} ${sc.name.toLowerCase()}`));
+      };
+      draw();
+      body.append(chips, holder);
+    }
+    else if (sec === 'key') {
+      const maj = MAJOR_KEY_CHORDS.map((c, i) => ({ ...c, root: mod12(pc + c.off), name: spell(nm, c.off, i) + CHORD_TYPES[c.type].sym }));
+      const relMin = mod12(pc + 9), relMaj = mod12(pc + 3);
+      const chordChip = (r, type, deg, label) => h('button', { class: 'keychip', onclick: () => AudioEngine.strum(shapeMidis(r, type), AudioEngine.now() + 0.02, { gain: 0.3, spread: 0.035 }) },
+        h('small', null, deg), h('b', null, label));
+      const progs = [['I – V – vi – IV', [0, 4, 5, 3]], ['I – IV – V', [0, 3, 4]], ['vi – IV – I – V', [5, 3, 0, 4]], ['ii – V – I', [1, 4, 0]]];
+      const minorKey = [[0, 'min', 'i'], [2, 'dim', 'ii°'], [3, 'maj', 'III'], [5, 'min', 'iv'], [7, 'min', 'v'], [8, 'maj', 'VI'], [10, 'maj', 'VII']];
+      body.append(
+        h('div', { class: 'card stack' },
+          h('div', { class: 'row between' }, h('h3', null, `Key of ${nm} major`), h('span', { class: 'badge accent' }, `relative minor: ${spell(nm, 9, 5)}m`)),
+          h('p', { class: 'small muted' }, 'The 7 chords that belong together. Tap to hear.'),
+          h('div', { class: 'keygrid' }, maj.map(c => chordChip(c.root, c.type, c.deg, c.name))),
+          h('div', { class: 'tiny', style: { marginTop: '6px' } }, 'Progressions that always work'),
+          ...progs.map(([name, idx]) => h('button', { class: 'progrow', onclick: () => {
+            const t = AudioEngine.now();
+            idx.forEach((k, i) => AudioEngine.strum(shapeMidis(maj[k].root, maj[k].type), t + i * 1.0, { gain: 0.28, spread: 0.03, cut: 0.95 }));
+          } }, h('span', { class: 'small muted' }, name), h('b', null, idx.map(k => maj[k].name).join(' – ')), icon('play', 14)))),
+        h('div', { class: 'card stack' },
+          h('div', { class: 'row between' }, h('h3', null, `Key of ${nm} minor`), h('span', { class: 'badge' }, `relative major: ${spell(nm, 3, 2)}`)),
+          h('div', { class: 'keygrid' }, minorKey.map(([o, ty, d], i) => chordChip(mod12(pc + o), ty, d, spell(nm, o, i) + CHORD_TYPES[ty].sym))),
+          h('p', { class: 'small muted' }, `Solo over a ${nm} minor song with ${nm} minor pentatonic (or the blues scale).`)));
+    }
+    else if (sec === 'friends') {
+      const rows = [
+        [7, 'Perfect 5th', 'The strongest partner: power chords, bass lines, safe landing note.'],
+        [5, 'Perfect 4th', 'Stable and open. Great for riffs and double stops.'],
+        [4, 'Major 3rd', 'Makes things sound happy and major.'],
+        [3, 'Minor 3rd', 'Makes things sound sad, dark, minor.'],
+        [10, 'Minor 7th', 'Bluesy colour. Every blues chord has it.'],
+        [9, 'Major 6th', 'Sweet, country/soul sound.'],
+        [2, 'Major 2nd', 'Gentle passing tone.'],
+        [11, 'Major 7th', 'Dreamy and jazzy, wants to rise to the root.'],
+        [6, 'Tritone', 'Maximum tension. Use it to create suspense, then resolve.'],
+        [1, 'Minor 2nd', 'Crunchy clash. Slide through it, don’t sit on it.'],
+      ];
+      body.appendChild(h('div', { class: 'card stack' },
+        h('div', { class: 'tiny' }, `Notes that go with ${nm}, from strongest to most tense`),
+        ...rows.map(([iv, name, txt]) => {
+          const steps = { 1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 9: 5, 10: 6, 11: 6 }[iv];
+          return h('button', { class: 'friendrow', onclick: () => { const t = AudioEngine.now(); const b = 48 + pc; AudioEngine.pluck(b, t, { gain: 0.38 }); AudioEngine.pluck(b + iv, t + 0.5, { gain: 0.38 }); AudioEngine.pluck(b, t + 1.1, { gain: 0.3 }); AudioEngine.pluck(b + iv, t + 1.1, { gain: 0.3 }); } },
+            h('span', { class: 'bubble', style: { width: '44px', height: '44px', fontSize: '15px', fontWeight: 800 } }, spell(nm, iv, steps)),
+            h('div', { class: 'grow', style: { textAlign: 'left' } }, h('b', null, name), h('div', { class: 'small muted' }, txt)),
+            icon('play', 14));
+        })));
+      body.appendChild(h('p', { class: 'small muted center' }, 'Tap a row to hear the two notes together.'));
+    }
+  }
+  renderSeg(); renderBody();
   return root;
 }
 
 // ---------- App shell & router ----------
 const App = {
   current: null, view: null,
-  tabs: [['home', 'Home', 'home'], ['learn', 'Learn', 'learn'], ['ear', 'Ear', 'ear'], ['studio', 'Studio', 'studio'], ['journal', 'Journal', 'journal']],
+  tabs: [['home', 'Home', 'home'], ['learn', 'Learn', 'learn'], ['index', 'Index', 'index'], ['ear', 'Ear', 'ear'], ['studio', 'Studio', 'studio'], ['journal', 'Journal', 'journal']],
   routes: {
     home: { view: HomeView, tab: 'home' },
     session: { view: SessionView, full: true },
@@ -2874,6 +3110,8 @@ const App = {
     chapter: { view: ChapterView, tab: 'learn' },
     lesson: { view: LessonView, tab: 'learn' },
     review: { view: ReviewView, tab: 'learn' },
+    index: { view: IndexView, tab: 'index' },
+    note: { view: NoteView, tab: 'index' },
     ear: { view: EarView, tab: 'ear' },
     earRun: { view: EarRunView, tab: 'ear' },
     studio: { view: StudioScreen, tab: 'studio' },
@@ -2899,7 +3137,7 @@ const App = {
     let bar = document.querySelector('.tabs');
     if (r.full) { if (bar) bar.style.display = 'none'; return; }
     if (!bar) {
-      bar = h('nav', { class: 'tabs' }, h('i', { class: 'tabpill' }));
+      bar = h('nav', { class: 'tabs' }, h('i', { class: 'tabpill', style: { width: (100 / this.tabs.length) + '%' } }));
       this.tabs.forEach(([k, label, ic]) => bar.appendChild(h('button', { 'data-tab': k, onclick: () => { if (this.current !== k) this.go(k); } }, icon(ic, 24), h('span', null, label))));
       document.body.appendChild(bar);
     }
@@ -2911,7 +3149,7 @@ const App = {
 };
 
 // ---------- touch feel: bubble ripple + soft pop ----------
-const PRESSABLE = '.btn, .chip, .tile, .option, .card.tap, .tabs button, .iconbtn, .levelchip, .seg button, .lessonrow, .recbtn, .chordbox, .rec .play';
+const PRESSABLE = '.notebubble, .keychip, .progrow, .friendrow, .btn, .chip, .tile, .option, .card.tap, .tabs button, .iconbtn, .levelchip, .seg button, .lessonrow, .recbtn, .chordbox, .rec .play';
 document.addEventListener('pointerdown', e => {
   const el = e.target.closest(PRESSABLE);
   if (!el || el.disabled) return;

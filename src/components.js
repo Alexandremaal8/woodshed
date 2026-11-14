@@ -595,11 +595,16 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
     root.appendChild(h('div', { class: 'row between' }, h('div', { class: 'tiny' }, `${daily ? 'Daily ear challenge' : 'Ear practice'} · ${n + 1}/${count}`), h('div', { class: 'badge' }, `${q.tag || 'L' + level} · ${correct} ✓`)));
     let answered = false;
     const fbBox = h('div');
-    function result(ok, chosenBtn) {
+    function result(ok, chosen) {
       if (answered) return; answered = true;
       if (ok) correct++;
       earRecord(level, ok);
-      fbBox.appendChild(h('div', { class: 'feedback ' + (ok ? 'ok' : 'no') }, h('b', null, ok ? 'Yes! ' : 'Answer: '), q.reveal));
+      let hint = null;
+      if (!ok && chosen && (level === 'N' || level === 4)) {
+        const cp = pcOf(String(chosen).split('/')[0]), ap = pcOf(String(q.answer).split('/')[0]);
+        if (cp >= 0) { let d = mod12(cp - ap); if (d > 6) d -= 12; hint = `You picked ${chosen}: ${Math.abs(d)} half step${Math.abs(d) > 1 ? 's' : ''} too ${d > 0 ? 'high' : 'low'}. ${Math.abs(d) <= 1 ? 'Very close!' : ''}`; }
+      }
+      fbBox.appendChild(h('div', { class: 'feedback ' + (ok ? 'ok' : 'no') }, h('b', null, ok ? 'Yes! ' : 'Answer: '), q.reveal, hint ? h('div', { class: 'small', style: { marginTop: '6px', color: 'var(--accent2)' } }, hint) : null));
       fbBox.appendChild(h('div', { class: 'row', style: { marginTop: '10px' } },
         h('button', { class: 'btn grow', onclick: () => q.play() }, 'Hear again'),
         h('button', { class: 'btn primary grow', onclick: () => { n++; nextQ(); } }, 'Next')));
@@ -615,7 +620,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
     root.appendChild(card);
     if (typed) {
       const inp = h('input', { placeholder: level === 3 ? 'e.g. minor 3rd, P5' : level === 4 || level === 'N' ? 'e.g. C#' : level === 'C' ? 'e.g. G, Am, Bb' : level === 5 ? 'e.g. I V vi IV' : 'e.g. minor, maj7', autocapitalize: 'off', autocomplete: 'off' });
-      root.appendChild(h('form', { class: 'row', onsubmit: e => { e.preventDefault(); if (!inp.value.trim()) return; result(q.accept(inp.value)); } }, inp, h('button', { class: 'btn primary', type: 'submit' }, 'OK')));
+      root.appendChild(h('form', { class: 'row', onsubmit: e => { e.preventDefault(); if (!inp.value.trim()) return; result(q.accept(inp.value), inp.value.trim()); } }, inp, h('button', { class: 'btn primary', type: 'submit' }, 'OK')));
       root.appendChild(h('p', { class: 'muted small center' }, 'Typed mode is on. You can turn it off in the Ear tab.'));
     } else {
       const list = h('div', { class: 'col' });
@@ -624,7 +629,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
         const ok = o === q.answer;
         e.target.classList.add(ok ? 'right' : 'wrong');
         if (!ok) [...list.children].forEach(b => { if (b.textContent === q.answer) b.classList.add('right'); });
-        result(ok);
+        result(ok, o);
       } }, o)));
       root.appendChild(list);
     }
