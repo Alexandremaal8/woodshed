@@ -509,7 +509,7 @@ function makeEarQuestion(level) {
     const m = randInt(52, 66), pc = mod12(m);
     const playFn = () => { const t = now(); AudioEngine.pluck(m, t, { gain: 0.45 }); AudioEngine.pluck(m, t + 1.1, { gain: 0.35 }); };
     const opts = shuffle([pc, ...shuffle([...Array(12).keys()].filter(x => x !== pc)).slice(0, 3)]).map(bothNames);
-    return { level, tag: 'Note', prompt: 'Which note is this?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: bothNames(pc),
+    return { level, tag: 'Note', prompt: 'Which note is this?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: nameWithAlt(pc),
       refBtn: () => AudioEngine.pluck(57, AudioEngine.now(), { gain: 0.4 }), refHint: 'Stuck? Tap A to hear an A for comparison.',
       show: () => howTo(`Where to play ${bothNames(pc)} (tap to hear)`, notePositionsBoard([pc], pc)) };
   }
@@ -559,7 +559,7 @@ function makeEarQuestion(level) {
     const off = randInt(1, 11), pc = mod12(9 + off);
     const playFn = () => { const t = now(); AudioEngine.pluck(ref, t, { gain: 0.4 }); AudioEngine.pluck(ref + off, t + 1.0, { gain: 0.45 }); };
     const opts = shuffle([pc, ...shuffle([...Array(12).keys()].filter(x => x !== pc && x !== 9)).slice(0, 3)]).map(bothNames);
-    return { level, prompt: 'First note is A. What is the second note?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: bothNames(pc),
+    return { level, prompt: 'First note is A. What is the second note?', play: playFn, options: opts, answer: bothNames(pc), accept: v => pcOf(v) === pc, reveal: nameWithAlt(pc),
       refBtn: () => AudioEngine.pluck(ref, AudioEngine.now(), { gain: 0.4 }),
       show: () => howTo(`A (gold) and ${bothNames(pc)} on the neck`, notePositionsBoard([9, pc], 9)) };
   }

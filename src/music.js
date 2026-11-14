@@ -64,10 +64,11 @@ function pcOf(name) {
 function noteName(pc, preferFlats = false) {
   return (preferFlats ? FLATS : SHARPS)[mod12(pc)];
 }
-function bothNames(pc) {
-  const s = SHARPS[mod12(pc)], f = FLATS[mod12(pc)];
-  return s === f ? s : `${s}/${f}`;
-}
+// One clear name per note (the one musicians use most); the other name is shown only as a hint
+const MAIN_NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+const OTHER_NAMES = ['', 'Db', '', 'D#', '', '', 'Gb', '', 'G#', '', 'A#', ''];
+function bothNames(pc) { return MAIN_NAMES[mod12(pc)]; }
+function nameWithAlt(pc) { const o = OTHER_NAMES[mod12(pc)]; return MAIN_NAMES[mod12(pc)] + (o ? ` (also called ${o})` : ''); }
 function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
 function fretPc(stringIdx, fret) { return mod12(STRINGS[stringIdx].midi + fret); }
 function fretMidi(stringIdx, fret) { return STRINGS[stringIdx].midi + fret; }
