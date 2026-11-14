@@ -37,6 +37,8 @@ const SCALES = {
   blues:      { name: 'Blues scale',       steps: [0,3,5,6,7,10],   degrees: ['1','b3','4','b5','5','b7'] },
   dorian:     { name: 'Dorian',            steps: [0,2,3,5,7,9,10], degrees: ['1','2','b3','4','5','6','b7'] },
   mixolydian: { name: 'Mixolydian',        steps: [0,2,4,5,7,9,10], degrees: ['1','2','3','4','5','6','b7'] },
+  lydian:     { name: 'Lydian',            steps: [0,2,4,6,7,9,11], degrees: ['1','2','3','#4','5','6','7'] },
+  phrygian:   { name: 'Phrygian',          steps: [0,1,3,5,7,8,10], degrees: ['1','b2','b3','4','5','b6','b7'] },
 };
 
 const CHORD_TYPES = {

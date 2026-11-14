@@ -79,6 +79,9 @@ function LessonPlayer(lesson, opts = {}) {
       const c = cards[ci];
       root.appendChild(h('div', { class: 'dots' }, cards.map((_, i) => h('i', { class: i === ci ? 'on' : '' }))));
       const card = h('div', { class: 'card lessoncard' }, h('div', { class: 'tiny' }, `${lesson.title} · ${ci + 1}/${cards.length}`), h('h2', null, c.h), h('p', { html: c.p }));
+      if (c.pre) card.appendChild(h('pre', { class: 'tab' }, c.pre));
+      if (c.chord) card.appendChild(h('div', { class: 'chordrow' }, ChordDiagram(c.chord[0], c.chord[1], c.chord[2] ? { shape: barreShape(c.chord[2], c.chord[0], c.chord[1]) } : {})));
+      if (c.box) card.appendChild(h('div', { class: 'chordrow' }, ChordDiagram(c.box.root, 'maj', { shape: { frets: c.box.frets, fingers: c.box.fingers, barre: 0 }, label: c.box.label })));
       if (c.fb) {
         const fb = Fretboard({ from: c.fb.from, to: c.fb.to, marks: c.fb.marks(), onTap: (st, f) => AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.35 }) });
         card.appendChild(fb);
@@ -290,6 +293,7 @@ function DrillView(cfg, lessonId, onDone) {
   const best = Store.state.drills[lessonId];
   const root = h('div', { class: 'stack' },
     h('div', { class: 'card stack' }, h('h3', null, cfg.title), h('p', { class: 'muted' }, cfg.how),
+      cfg.pre ? h('pre', { class: 'tab' }, cfg.pre) : null,
       cfg.fb ? (() => { const fb = Fretboard({ from: cfg.fb.from, to: cfg.fb.to, marks: cfg.fb.marks(), onTap: (st, f) => AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.35 }) }); if (cfg.fb.from > 3) fb.scrollToFret(cfg.fb.from + 2); return fb; })() : null),
     h('div', { class: 'card stack center' },
       h('div', { class: 'tiny' }, 'Tempo (BPM)'),
@@ -456,7 +460,7 @@ function StudioView(cfg = {}, opts = {}) {
     if (!opts.lockStyle) root.appendChild(styleChips());
     const keySel = h('select', { onchange: e => { key = e.target.value; saveLast(); renderFretboard(); restartIfPlaying(); } }, KEYS.map(k => h('option', { value: k, selected: k === key ? true : null }, k)));
     const scaleSel = h('select', { onchange: e => { scale = e.target.value; renderFretboard(); } },
-      [...new Set([...sv.scales, 'minorPent', 'majorPent', 'blues', 'major', 'minor', 'dorian', 'mixolydian'])].map(k => h('option', { value: k, selected: k === scale ? true : null }, SCALES[k].name)));
+      [...new Set([...sv.scales, 'minorPent', 'majorPent', 'blues', 'major', 'minor', 'dorian', 'mixolydian', 'lydian', 'phrygian'])].map(k => h('option', { value: k, selected: k === scale ? true : null }, SCALES[k].name)));
     const bpmLbl = h('span', { class: 'timer' }, bpm + ' BPM');
     const bpmIn = h('input', { type: 'range', class: 'slider', min: 50, max: 180, value: bpm, oninput: e => { bpm = +e.target.value; bpmLbl.textContent = bpm + ' BPM'; }, onchange: () => restartIfPlaying() });
     root.appendChild(h('div', { class: 'card stack' },

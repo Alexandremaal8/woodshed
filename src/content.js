@@ -380,14 +380,8 @@ const CHAPTERS = [
       },
     ],
   },
-  { id: 'c7', title: 'Modes', icon: '🌈', blurb: 'Dorian, Mixolydian and friends: new colours from the same notes.', soon: true, lessons: [] },
-  { id: 'c8', title: 'Phrasing', icon: '🗣️', blurb: 'Bends, vibrato, space, call and response: making notes talk.', soon: true, lessons: [] },
 ];
 
-const ALL_LESSONS = CHAPTERS.flatMap(c => c.lessons.map(l => ({ ...l, chapter: c })));
-const LESSON_BY_ID = Object.fromEntries(ALL_LESSONS.map(l => [l.id, l]));
-const QUESTION_BY_ID = {};
-ALL_LESSONS.forEach(l => l.quiz.forEach(q => { QUESTION_BY_ID[q.id] = { ...q, lesson: l.id }; }));
 
 // ---------- Ear training levels ----------
 const EAR_LEVELS = [

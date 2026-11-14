@@ -336,3 +336,11 @@ svg.fb .ripple { pointer-events: none; animation: ripple .45s ease-out forwards;
 .swap { animation: floatin .35s cubic-bezier(.2,.9,.3,1.15) both; }
 .tabs button span { font-size: 10.5px; }
 .notebubble { position: relative; overflow: hidden; transition: transform .35s cubic-bezier(.34,1.8,.5,1); }
+pre.tab { margin: 0; padding: 12px 14px; border-radius: 16px; background: rgba(0,0,0,.35); color: var(--accent2); font: 600 13px/1.45 ui-monospace, "SF Mono", Menlo, monospace; overflow-x: auto; }
+.gloss { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; }
+.glossitem { border-radius: 16px; background: rgba(255,255,255,.05); padding: 10px 14px; }
+.glossitem summary { font-weight: 700; cursor: pointer; list-style: none; }
+.glossitem summary::-webkit-details-marker { display: none; }
+.glossitem summary::after { content: '+'; float: right; color: var(--accent); font-weight: 800; }
+.glossitem[open] summary::after { content: '–'; }
+.glossitem p { margin-top: 6px; color: var(--text); }

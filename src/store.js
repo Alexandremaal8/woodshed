@@ -140,6 +140,7 @@ function chapterProgress(ch) {
 }
 function chapterUnlocked(idx) {
   if (idx === 0) return true;
+  if (CHAPTERS[idx].lessons.some(l => Store.state.lessonsDone[l.id])) return true;
   const prev = CHAPTERS[idx - 1];
   if (prev.soon) return false;
   const p = chapterProgress(prev);

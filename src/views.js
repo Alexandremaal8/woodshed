@@ -201,6 +201,12 @@ function SessionView({ minutes }) {
 function LearnView() {
   const root = h('div', { class: 'stack' });
   root.appendChild(topBar('Learn', { right: levelChip() }));
+  const doneN = ALL_LESSONS.filter(l => Store.state.lessonsDone[l.id]).length;
+  root.appendChild(h('div', { class: 'card hero stack' },
+    h('div', { class: 'row between' }, h('div', { class: 'tiny', style: { color: 'var(--accent2)' } }, 'Your path'), h('span', { class: 'small muted' }, `${doneN} / ${ALL_LESSONS.length} lessons`)),
+    h('div', { class: 'bar' }, h('i', { style: { width: (100 * doneN / ALL_LESSONS.length) + '%' } })),
+    h('p', { class: 'small muted' }, 'By the end you’ll be able to:'),
+    h('div', { class: 'chips' }, ['find any note', 'read diagrams & tabs', 'decode any chord name', 'count rhythm', 'hear intervals', 'build scales & chords', 'find a song’s key', 'use the circle of 5ths', 'play CAGED shapes', 'target chord tones', 'use modes', 'build a real solo'].map(x => h('span', { class: 'badge' }, '✓ ' + x)))));
   const due = srsDue();
   if (due.length) root.appendChild(h('div', { class: 'card tap row', onclick: () => App.go('review') },
     h('div', { style: { fontSize: '26px' } }, '🔁'), h('div', { class: 'grow' }, h('h3', null, `Review (${due.length})`), h('p', { class: 'small muted' }, 'Spaced repetition: what you miss comes back more often.'))));
@@ -510,6 +516,6 @@ function ProgressView() {
       try { const d = JSON.parse(txt); delete d.exported; Store.state = { ...defaultState(), ...d }; Store.save(); UI.toast('Progress restored'); App.go('progress'); } catch (e) { UI.toast('That doesn’t look like a backup'); }
     } }, 'Restore progress backup'),
     h('button', { class: 'btn danger block', onclick: async () => { if (await UI.confirm('Reset all progress?', 'XP, lessons and stats will be erased. Recordings stay in the Journal.', 'Reset', true)) { Store.reset(); App.go('home'); } } }, 'Reset progress'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.3')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.4')));
   return root;
 }

@@ -12,6 +12,7 @@ function IndexView() {
   root.appendChild(h('div', { class: 'notegrid' }, [...Array(12).keys()].map(pc =>
     h('button', { class: 'notebubble' + (ALT_NAMES[pc] ? ' acc' : ''), onclick: () => App.go('note', { pc }) },
       h('b', null, niceName(pc)), ALT_NAMES[pc] ? h('small', null, ALT_NAMES[pc]) : null))));
+  root.appendChild(GlossaryCard());
   root.appendChild(h('div', { class: 'card stack' },
     h('div', { class: 'tiny' }, 'Quick reference'),
     h('div', { class: 'row between' }, h('span', null, 'Open strings'), h('b', null, 'E A D G B E')),
@@ -90,7 +91,7 @@ function NoteView({ pc }) {
       const holder = h('div', { class: 'stack' });
       const draw = () => {
         chips.innerHTML = '';
-        ['minorPent', 'majorPent', 'blues', 'major', 'minor', 'dorian', 'mixolydian'].forEach(k => chips.appendChild(h('button', { class: 'chip' + (k === scale ? ' on' : ''), onclick: () => { scale = k; st.lastNoteScale = k; Store.save(); draw(); } }, SCALES[k].name)));
+        ['minorPent', 'majorPent', 'blues', 'major', 'minor', 'dorian', 'mixolydian', 'lydian', 'phrygian'].forEach(k => chips.appendChild(h('button', { class: 'chip' + (k === scale ? ' on' : ''), onclick: () => { scale = k; st.lastNoteScale = k; Store.save(); draw(); } }, SCALES[k].name)));
         holder.innerHTML = '';
         const sc = SCALES[scale];
         const pcs = scalePcs(pc, scale);
@@ -162,4 +163,88 @@ function NoteView({ pc }) {
   }
   renderSeg(); renderBody();
   return root;
+}
+
+// ---------- Glossary ----------
+const GLOSSARY = [
+  ['Root', 'The note a chord or scale is built on and named after. In Am, the root is A.'],
+  ['Sharp (#)', 'Raises a note by one fret (a half step). F# is one fret above F. Nothing to do with major or minor.'],
+  ['Flat (b)', 'Lowers a note by one fret. Bb is one fret below B.'],
+  ['Natural (♮)', 'Cancels a sharp or flat.'],
+  ['Enharmonic', 'Two names for the same note: F# = Gb, A# = Bb.'],
+  ['Half step / semitone', 'The smallest distance: one fret.'],
+  ['Whole step / tone', 'Two frets.'],
+  ['Octave', 'The same note 12 frets (12 half steps) higher.'],
+  ['Interval', 'The distance between two notes, e.g. minor 3rd = 3 frets, perfect 5th = 7 frets.'],
+  ['Major chord', '1 – 3 – 5. Written as the letter alone: G = G major.'],
+  ['Minor chord (m)', '1 – b3 – 5. Written with an m: Gm. Only the 3rd differs from major.'],
+  ['7 (dominant 7)', 'Major chord + minor 7th: G7 = G B D F. Bluesy, wants to resolve.'],
+  ['maj7', 'Major chord + major 7th: Gmaj7 = G B D F#. Dreamy. The “maj” is about the 7th.'],
+  ['m7', 'Minor chord + minor 7th: Gm7 = G Bb D F. Smooth, funky.'],
+  ['5 (power chord)', 'Root + 5th only, no 3rd: G5 = G D. Neither major nor minor.'],
+  ['sus2 / sus4', 'The 3rd is replaced by the 2nd or 4th. Open, unresolved sound.'],
+  ['add9', 'Major chord + the 9th (the 2nd an octave up). Keeps the 3rd.'],
+  ['dim (°)', 'Diminished: 1 – b3 – b5. Tense. The vii° chord of a major key.'],
+  ['aug (+)', 'Augmented: 1 – 3 – #5. Dreamy, suspenseful.'],
+  ['Slash chord', 'Chord / bass note. G/B = G chord with B as the lowest note.'],
+  ['Inversion', 'A chord with a note other than the root in the bass (3rd or 5th).'],
+  ['Barre chord', 'One finger presses several strings across a fret, so the shape can move anywhere.'],
+  ['Triad', 'A 3-note chord: 1, 3, 5.'],
+  ['Arpeggio', 'The notes of a chord played one by one.'],
+  ['Scale', 'A set of notes in order, used to build melodies and chords.'],
+  ['Major scale', 'W W H W W W H. Do re mi fa sol la ti do.'],
+  ['Natural minor', 'The major scale started on its 6th note. Also called Aeolian.'],
+  ['Pentatonic', 'A 5-note scale. Minor pentatonic: 1 b3 4 5 b7. Major pentatonic: 1 2 3 5 6.'],
+  ['Blues scale', 'Minor pentatonic + the b5 “blue note”.'],
+  ['Scale degree', 'A note’s number in the scale (1 to 7). Works in every key.'],
+  ['Key', 'The scale and home note a song is built around, e.g. G major.'],
+  ['Key signature', 'The sharps or flats of a key. G major has one: F#.'],
+  ['Circle of fifths', 'All keys arranged in 5ths: C G D A E B F#… each adds a sharp; C F Bb Eb… each adds a flat.'],
+  ['Relative minor', 'The minor key with the same notes as a major key, 3 frets lower. C major ↔ A minor.'],
+  ['Roman numerals (I IV V)', 'Chords named by their scale degree. Big = major, small = minor. Same in every key.'],
+  ['Progression', 'A sequence of chords, e.g. I – V – vi – IV.'],
+  ['Cadence', 'A chord move that ends a phrase. V → I = strong ending.'],
+  ['Leading tone', 'The 7th degree, a half step below the root. It pulls up to the root.'],
+  ['Mode', 'A scale started on a different note of the major scale: Dorian, Mixolydian, Lydian…'],
+  ['Dorian', 'Minor with a natural 6: 1 2 b3 4 5 6 b7.'],
+  ['Mixolydian', 'Major with a b7: 1 2 3 4 5 6 b7. Fits 7 chords.'],
+  ['Lydian', 'Major with a #4. Dreamy.'],
+  ['Phrygian', 'Minor with a b2. Dark, Spanish/metal.'],
+  ['CAGED', 'The 5 open shapes C A G E D, moved up the neck to play any chord in 5 places.'],
+  ['Capo', 'A clamp that raises all strings. G shapes + capo 2 = sounds in A.'],
+  ['Transpose', 'Move a whole song to another key by shifting every chord the same distance.'],
+  ['Tab', '6 lines = strings (top line = high e), numbers = frets.'],
+  ['Chord diagram', 'Neck standing up: low E on the left, frets going down, numbers = fingers, × = don’t play, ○ = open.'],
+  ['Hammer-on (h)', 'Pick a note, then press a higher fret hard enough to sound it without picking.'],
+  ['Pull-off (p)', 'Pick a note, then pull the finger off to sound a lower fret.'],
+  ['Slide (/ \\)', 'Move along the string while holding the note.'],
+  ['Bend (b)', 'Push the string to raise the pitch. Full bend = 2 frets.'],
+  ['Vibrato (~)', 'Small repeated bends on a held note.'],
+  ['Palm mute (P.M.)', 'Rest the side of your picking hand on the strings near the bridge for a chunky sound.'],
+  ['Beat', 'The steady pulse of the music.'],
+  ['Bar / measure', 'A group of beats, usually 4.'],
+  ['Time signature', '4/4, 3/4, 6/8… top = beats per bar, bottom = the note value that counts.'],
+  ['BPM', 'Beats per minute: the tempo.'],
+  ['Triplet', '3 notes in the space of 2.'],
+  ['Shuffle / swing', 'Long-short eighth notes, the feel of blues and jazz.'],
+  ['Syncopation', 'Accents between the beats.'],
+  ['Motif', 'A short musical idea that you repeat and vary.'],
+  ['Call and response', 'A “question” phrase followed by an “answer” phrase.'],
+  ['Double stop', 'Two notes played at the same time.'],
+  ['Tritone', '6 frets: the most tense interval. Also called b5 or #4.'],
+];
+
+function GlossaryCard() {
+  const list = h('div', { class: 'gloss' });
+  const inp = h('input', { placeholder: 'Search a term: maj7, capo, tab…', autocomplete: 'off', autocapitalize: 'off' });
+  function render() {
+    const q = inp.value.trim().toLowerCase();
+    list.innerHTML = '';
+    const items = GLOSSARY.filter(([t, d]) => !q || t.toLowerCase().includes(q) || d.toLowerCase().includes(q));
+    if (!items.length) list.appendChild(h('p', { class: 'small muted' }, 'No match. Ask Claude and it can be added!'));
+    items.forEach(([term, def]) => list.appendChild(h('details', { class: 'glossitem' }, h('summary', null, term), h('p', { class: 'small' }, def))));
+  }
+  inp.addEventListener('input', render);
+  render();
+  return h('div', { class: 'card stack' }, h('div', { class: 'row between' }, h('h3', null, '📖 Glossary'), h('span', { class: 'small muted' }, `${GLOSSARY.length} terms`)), inp, list);
 }

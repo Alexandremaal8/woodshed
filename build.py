@@ -1,8 +1,8 @@
 import pathlib, json
 src = pathlib.Path('src'); dist = pathlib.Path('.')
-VERSION = '1.3.1'
+VERSION = '1.4.0'
 css = (src/'styles.css').read_text()
-js = '\n'.join((src/f).read_text() for f in ['music.js','audio.js','content.js','store.js','ui.js','components.js','views.js','library.js','app.js'])
+js = '\n'.join((src/f).read_text() for f in ['music.js','audio.js','content.js','content2.js','store.js','ui.js','components.js','views.js','library.js','app.js'])
 html = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
