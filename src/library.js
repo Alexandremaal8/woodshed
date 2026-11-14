@@ -77,9 +77,9 @@ function NoteView({ pc }) {
         const shapes = chordShapesAll(pc, type);
         const notes = spelledChordTones(nm, type).join(' · ');
         body.appendChild(h('div', { class: 'card stack' },
-          h('div', { class: 'row between' }, h('h3', null, nm + CHORD_TYPES[type].sym), h('span', { class: 'small muted' }, title)),
+          h('div', { class: 'row between' }, h('h3', null, ({ maj: `${nm} major`, min: `${nm} minor` }[type] || nm + CHORD_TYPES[type].sym)), h('span', { class: 'small muted' }, title)),
           h('p', { class: 'small muted' }, `Notes: ${notes}`),
-          h('div', { class: 'chordrow scrollrow' }, shapes.map(sh => ChordDiagram(pc, type, { shape: sh, small: true, label: nm + CHORD_TYPES[type].sym, caption: sh.label }))),
+          h('div', { class: 'chordrow scrollrow' }, shapes.map(sh => ChordDiagram(pc, type, { shape: sh, small: true, label: ({ maj: `${nm} major`, min: `${nm} minor` }[type] || nm + CHORD_TYPES[type].sym), caption: sh.label }))),
           shapes.length > 2 ? h('p', { class: 'small muted' }, `${shapes.length} ways to play it · swipe →`) : null));
       });
       body.appendChild(h('p', { class: 'small muted center' }, 'Tap a chord to hear it. Gold dots are the root.'));
@@ -123,7 +123,7 @@ function NoteView({ pc }) {
       body.append(
         h('div', { class: 'card stack' },
           h('div', { class: 'row between' }, h('h3', null, `Key of ${nm} major`), h('span', { class: 'badge accent' }, `relative minor: ${spell(nm, 9, 5)}m`)),
-          h('p', { class: 'small muted' }, 'The 7 chords that belong together. Tap to hear.'),
+          h('p', { class: 'small muted' }, 'The 7 chords that belong together. Tap to hear. (A letter alone, like G, means G major; “m” means minor.)'),
           h('div', { class: 'keygrid' }, maj.map(c => chordChip(c.root, c.type, c.deg, c.name))),
           h('div', { class: 'tiny', style: { marginTop: '6px' } }, 'Progressions that always work'),
           ...progs.map(([name, idx]) => h('button', { class: 'progrow', onclick: () => {

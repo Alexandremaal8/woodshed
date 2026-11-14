@@ -514,9 +514,9 @@ function makeEarQuestion(level) {
     const others = shuffle(EAR_CHORD_POOL.filter(([r, ty]) => !(r === rootPc && ty === type))).slice(0, 3);
     const opts = shuffle([[rootPc, type], ...others]).map(([r, ty]) => chordName(r, ty));
     return { level, tag: 'Chord', prompt: 'Which chord is this?', play: playFn, options: opts, answer: chordName(rootPc, type),
-      accept: v => { const p = parseChord(v); return !!p && p.pc === rootPc && p.type === type; }, reveal: fullChordName(rootPc, type, rootPc === 10),
+      accept: v => { const p = parseChord(v); return !!p && p.pc === rootPc && p.type === type; }, reveal: fullChordName(rootPc, type),
       refBtn: () => AudioEngine.pluck(57, AudioEngine.now(), { gain: 0.4 }), refHint: 'Tap A to hear an A note for comparison.',
-      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type, { label: fullChordName(rootPc, type, rootPc === 10).replace(/ \(.*\)/, '') }))) };
+      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type, { label: fullChordName(rootPc, type).replace(/ \(.*\)/, '') }))) };
   }
   if (level === 1 || level === 2) {
     const types = level === 1 ? ['maj', 'min'] : ['maj', 'min', 'dom7', 'maj7', 'm7'];
@@ -525,7 +525,7 @@ function makeEarQuestion(level) {
     const label = t => CHORD_TYPES[t].name;
     return { level, prompt: level === 1 ? 'Major or minor?' : 'Which chord type?', play: playFn, options: types.map(label), answer: label(type),
       accept: v => matchChordType(v) === type, reveal: fullChordName(rootPc, type),
-      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type, { label: fullChordName(rootPc, type, rootPc === 10).replace(/ \(.*\)/, '') }))) };
+      show: () => howTo('How to play it (tap the chord to hear)', h('div', { class: 'chordrow' }, ChordDiagram(rootPc, type, { label: fullChordName(rootPc, type).replace(/ \(.*\)/, '') }))) };
   }
   if (level === 3) {
     const pool = EAR_INTERVAL_SET.slice(0, Store.state.ear.typed[3] ? 9 : 7);
@@ -564,7 +564,7 @@ function makeEarQuestion(level) {
   const fl = [5, 10, 3, 8, 1].includes(keyPc);
   return { level, prompt: 'Which progression?', play: playFn, options: opts, answer: prog.name,
     accept: v => normProg(v) === normProg(prog.name), reveal: prog.name + ' in ' + noteName(keyPc, fl),
-    show: () => howTo('The chords (tap to hear)', h('div', { class: 'chordrow' }, prog.steps.map(([o, ty]) => ChordDiagram(mod12(keyPc + o), ty, { small: true, label: chordName(mod12(keyPc + o), ty, fl) })))) };
+    show: () => howTo('The chords (tap to hear)', h('div', { class: 'chordrow' }, prog.steps.map(([o, ty]) => ChordDiagram(mod12(keyPc + o), ty, { small: true, label: fullChordName(mod12(keyPc + o), ty, fl).replace(/ \(.*\)/, '') })))) };
 }
 function matchChordType(v) {
   const x = v.toLowerCase().replace(/[^a-z0-9]/g, '');

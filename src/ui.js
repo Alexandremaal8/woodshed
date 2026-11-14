@@ -204,6 +204,6 @@ function ChordDiagram(rootPc, type, opts = {}) {
   });
   const wrap = h('div', { class: 'chordbox', onclick: () => {
     AudioEngine.strum(frets.map((f, i) => f >= 0 ? fretMidi(i, f) : null).filter(x => x !== null), AudioEngine.now() + 0.02, { gain: 0.32, spread: 0.035 });
-  } }, h('b', null, opts.label || chordName(rootPc, type)), svg, opts.caption ? h('small', { class: 'muted', style: { fontSize: '11px' } }, opts.caption) : null);
+  } }, h('b', null, opts.label || fullChordName(rootPc, type).replace(/ \(.*\)/, '')), svg, opts.caption ? h('small', { class: 'muted', style: { fontSize: '11px' } }, opts.caption) : null);
   return wrap;
 }
