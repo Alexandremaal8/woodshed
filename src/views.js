@@ -517,6 +517,6 @@ function ProgressView() {
       try { const d = JSON.parse(txt); delete d.exported; Store.state = { ...defaultState(), ...d }; Store.save(); UI.toast('Progress restored'); App.go('progress'); } catch (e) { UI.toast('That doesn’t look like a backup'); }
     } }, 'Restore progress backup'),
     h('button', { class: 'btn danger block', onclick: async () => { if (await UI.confirm('Reset all progress?', 'XP, lessons and stats will be erased. Recordings stay in the Journal.', 'Reset', true)) { Store.reset(); App.go('home'); } } }, 'Reset progress'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.5')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.6')));
   return root;
 }

@@ -478,6 +478,46 @@ const CH_PHRASING = {
   ],
 };
 
+
+// ---------- Big-picture lessons for absolute beginners (v1.6) ----------
+const LESSON_WHAT_IS_SCALE = {
+  id: 'l3-0', title: 'What is a scale?',
+  cards: [
+    { h: 'A scale = a set of notes', p: 'Out of the 12 notes, a <b>scale</b> keeps only some of them, played in order from a starting note (the <b>root</b>) up to the same note an octave higher. Think of it as a <b>palette</b>: the colours you’re allowed to use.' },
+    { h: 'Why scales matter', p: 'Notes from the same scale sound good together. The melody, the solo and most chords of a song come from <b>one scale</b>. When people say “solo in A minor pentatonic”, it means: only use the notes of that scale.' },
+    { h: 'Scale vs key', p: 'The <b>key</b> of a song = which scale it uses + which note feels like home. “This song is in G major” = it uses the notes of the G major scale, and G is home.' },
+    { h: 'Different scales, different moods', p: 'Keep different notes and the mood changes: <b>major</b> (happy, bright), <b>minor</b> (sad, dark), <b>pentatonic</b> (5 notes, almost impossible to sound wrong), <b>blues</b> (gritty). You’ll learn them one by one.' },
+    { h: 'Hear one', p: 'Here is the C major scale on one string: C D E F G A B C. Tap the dots from left to right: do, re, mi…', fb: { from: 2, to: 15, marks: () => marksFor([0,2,4,5,7,9,11], 0, 3, 15, [1]) } },
+  ],
+  quiz: [
+    { t: 'mc', id: 'q3-0a', q: 'A scale is…', o: ['A chord with 7 notes', 'A set of notes played in order from a root', 'A strumming pattern', 'A type of guitar'], a: 1, ex: 'A selection of notes, in order, from the root to its octave.' },
+    { t: 'mc', id: 'q3-0b', q: '“The song is in A minor” means…', o: ['It only uses the A minor chord', 'It uses the A minor scale and A feels like home', 'It is slow', 'It has no major chords'], a: 1, ex: 'Key = scale + home note.' },
+    { t: 'mc', id: 'q3-0c', q: 'The root of the G major scale is…', o: ['C', 'D', 'G', 'B'], a: 2, ex: 'The note it starts from and is named after.' },
+    { t: 'mc', id: 'q3-0d', q: 'Why do soloists use scales?', o: ['To play faster', 'Their notes sound good together over the song', 'Because tabs require it', 'To tune the guitar'], a: 1, ex: 'Same palette as the song.' },
+  ],
+  practice: { type: 'drill', title: 'C major on one string', how: 'On the A string: frets 3 – 5 – 7 – 8 – 10 – 12 – 14 – 15. Sing “do re mi fa sol la ti do” as you play. Notice the two short steps (7→8 and 14→15).', bpm: 60, fb: { from: 2, to: 15, marks: () => marksFor([0,2,4,5,7,9,11], 0, 3, 15, [1]) } },
+  jam: { prompt: 'Use only the dots shown on the neck (C major). Play slowly and listen: every note fits.', style: 'pop', key: 'C', scale: 'major', tone: 'Clean + chorus' },
+};
+
+const LESSON_SCALE_FAMILY = {
+  id: 'l5-5', title: 'The scale family: the big picture',
+  cards: [
+    { h: 'They’re all related', p: 'The <b>major scale</b> (7 notes) is the parent. <b>Natural minor</b> = the same notes started from the 6th. <b>Pentatonics</b> = 5-note versions with the 2 “risky” notes removed. <b>Blues</b> = minor pentatonic + 1 extra note. <b>Modes</b> (later) = the major scale started on other notes.' },
+    { h: 'Side by side', p: '<b>Major</b>: 1 2 3 4 5 6 7<br><b>Natural minor</b>: 1 2 b3 4 5 b6 b7<br><b>Major pentatonic</b>: 1 2 3 5 6<br><b>Minor pentatonic</b>: 1 b3 4 5 b7<br><b>Blues</b>: 1 b3 4 b5 5 b7<br>Same root, different notes kept = different mood.' },
+    { h: 'Which one when?', p: 'Rock, blues, sad or gritty → <b>minor pentatonic</b> or <b>blues</b>. Happy, pop, country → <b>major pentatonic</b>. Want every colour for melodies → full <b>major</b> or <b>minor</b>. Good habit: start with the pentatonic (safe), then add the extra notes for colour.' },
+    { h: 'Scale vs chord vs arpeggio', p: '<b>Scale</b> = the notes available, played one after another. <b>Chord</b> = a few of those notes played <b>together</b>. <b>Arpeggio</b> = a chord’s notes played <b>one at a time</b>. All three come from the same palette.' },
+  ],
+  quiz: [
+    { t: 'mc', id: 'q5-5a', q: 'How many notes in a pentatonic scale?', o: ['4', '5', '6', '7'], a: 1, ex: 'Penta = five.' },
+    { t: 'mc', id: 'q5-5b', q: 'The blues scale is…', o: ['Major scale + b7', 'Minor pentatonic + b5', 'Major pentatonic + 4', 'Natural minor − 2'], a: 1, ex: 'Add the “blue note” b5.' },
+    { t: 'mc', id: 'q5-5c', q: 'Safest first choice to solo over a rock song in A minor?', o: ['A major scale', 'A minor pentatonic', 'A Lydian', 'A chromatic scale'], a: 1, ex: 'Five strong notes, nothing clashes.' },
+    { t: 'mc', id: 'q5-5d', q: 'What is the difference between a scale and a chord?', o: ['None', 'Scale = notes in order; chord = some of them played together', 'Chords have more notes', 'Scales are only for piano'], a: 1, ex: 'Same palette, different use.' },
+    { t: 'mc', id: 'q5-5e', q: 'A natural minor scale has the same notes as…', o: ['Its relative major scale', 'The blues scale', 'Any pentatonic', 'The chromatic scale'], a: 0, ex: 'A minor = C major notes, starting on A.' },
+  ],
+  practice: { type: 'drill', title: 'Four scales, one root', how: 'Around fret 5, play A minor pentatonic, then A blues (add Eb), then A natural minor (add B and F). Same root, hear how the mood changes. Use the scale menu in the Studio to see each one.', bpm: 70, fb: { from: 4, to: 9, marks: () => scaleMarks('A', 'minor', 5, 8) } },
+  jam: { prompt: '8 bars with minor pentatonic, 8 bars with the blues scale, 8 bars with natural minor. Switch the scale menu as you go and notice the difference.', style: 'rock', key: 'A', scale: 'minorPent', tone: 'Crunch' },
+};
+
 // insert the new chapters at the right places
 (function placeChapters() {
   // Order is built so every lesson only uses what came before it.
@@ -493,6 +533,8 @@ const CH_PHRASING = {
   CHAPTERS.splice(at('c1') + 1, 0, CH_SHORTHAND, CH_RHYTHM);          // Fretboard → Diagrams & Tabs → Rhythm
   const pent = CHAPTERS.splice(at('c5'), 1)[0];
   CHAPTERS.splice(at('c4') + 1, 0, pent, CH_KEYS, CH_MORECHORDS);     // Chords → Pentatonic → Keys → More Chords
+  CHAPTERS[at('c3')].lessons.unshift(LESSON_WHAT_IS_SCALE);
+  CHAPTERS[at('c5')].lessons.push(LESSON_SCALE_FAMILY);
   const c6 = CHAPTERS[at('c6')];
   c6.title = 'Target Notes & Arpeggios';
   c6.lessons.push(...EXTRA_TARGET_LESSONS);
