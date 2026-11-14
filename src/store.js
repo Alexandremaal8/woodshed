@@ -86,6 +86,7 @@ function addXP(n, why) {
   const after = levelInfo();
   const unlockedNow = Object.entries(AudioEngine.STYLES).filter(([k, s]) => s.xp > Store.state.xp - n && s.xp <= Store.state.xp).map(([k, s]) => s.name);
   UI.toast(`+${n} XP · ${why}`);
+  sfx('sparkle');
   if (after.lvl > before.lvl) setTimeout(() => UI.celebrate(`Level ${after.lvl}!`, after.title), 600);
   if (unlockedNow.length) setTimeout(() => UI.celebrate('Unlocked!', `New backing track: ${unlockedNow.join(', ')}`), 1400);
 }

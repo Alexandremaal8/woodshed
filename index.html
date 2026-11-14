@@ -358,6 +358,17 @@ pre.tab { margin: 0; padding: 12px 14px; border-radius: 16px; background: rgba(0
 .glossitem summary::after { content: '+'; float: right; color: var(--accent); font-weight: 800; }
 .glossitem[open] summary::after { content: '–'; }
 .glossitem p { margin-top: 6px; color: var(--text); }
+canvas.confetti { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 200; }
+/* XP toast pops with a glow */
+.toast.show { box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 0 0 1px rgba(242,165,65,.5), 0 0 28px rgba(242,165,65,.35); }
+/* correct / wrong flashes on cards */
+.feedback.ok { box-shadow: 0 0 0 0 rgba(79,193,143,.6); animation: floatin .35s cubic-bezier(.2,.9,.3,1.15) both, glowok 1s ease-out; }
+@keyframes glowok { 0% { box-shadow: 0 0 0 0 rgba(79,193,143,.55); } 100% { box-shadow: 0 0 0 14px rgba(79,193,143,0); } }
+/* level ring / bars fill smoothly */
+.bar > i { transition: width .9s cubic-bezier(.2,.9,.3,1); }
+/* press highlight for hero play button */
+.btn.primary.big { animation: breathe 3.2s ease-in-out infinite; }
+@keyframes breathe { 50% { box-shadow: inset 0 2px 0 rgba(255,255,255,.55), inset 0 -3px 0 rgba(150,70,0,.35), 0 10px 34px rgba(242,150,50,.55); } }
 </style>
 </head>
 <body>
@@ -568,7 +579,7 @@ function fullChordName(rootPc, type, flats) {
 
 // ---------- Audio engine: guitar synth, drums, backing tracks, recorder ----------
 const AudioEngine = (() => {
-  let ctx = null, master, backingBus, sfxBus, noiseBuf;
+  let ctx = null, master, backingBus, sfxBus, uiBus, noiseBuf;
   const ksCache = new Map();
 
   function setSession(type) {
@@ -585,6 +596,18 @@ const AudioEngine = (() => {
       master.connect(comp); comp.connect(ctx.destination);
       backingBus = ctx.createGain(); backingBus.gain.value = 0.8; backingBus.connect(master);
       sfxBus = ctx.createGain(); sfxBus.gain.value = 1; sfxBus.connect(master);
+      // small room reverb: makes the guitar synth and UI sounds less dry
+      try {
+        const len = Math.floor(ctx.sampleRate * 1.6), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+        for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+        const verb = ctx.createConvolver(); verb.buffer = ir;
+        const wet = ctx.createGain(); wet.gain.value = 0.22;
+        verb.connect(wet); wet.connect(master);
+        const sfxSend = ctx.createGain(); sfxSend.gain.value = 0.55; sfxBus.connect(sfxSend); sfxSend.connect(verb);
+        const bSend = ctx.createGain(); bSend.gain.value = 0.25; backingBus.connect(bSend); bSend.connect(verb);
+        uiBus = ctx.createGain(); uiBus.gain.value = 1; uiBus.connect(master);
+        const uiSend = ctx.createGain(); uiSend.gain.value = 0.35; uiBus.connect(uiSend); uiSend.connect(verb);
+      } catch (e) { uiBus = sfxBus; }
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -651,20 +674,47 @@ const AudioEngine = (() => {
   }
 
   function now() { ensure(); return ctx.currentTime; }
-  // soft UI "bubble pop"
+  // ---------- UI sounds ----------
+  function tone(f, t, { type = 'sine', dur = 0.12, vol = 0.06, to = null, attack = 0.006 } = {}) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur * 0.6);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(uiBus); o.start(t); o.stop(t + dur + 0.02);
+  }
+  // soft water-drop "bubble": slightly different every time so it never feels robotic
   function pop(bright = false) {
     try {
       ensure();
-      const t = ctx.currentTime + 0.005;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine';
-      const f0 = bright ? 520 : 380;
-      o.frequency.setValueAtTime(f0, t);
-      o.frequency.exponentialRampToValueAtTime(f0 * 2.1, t + 0.05);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.06, t + 0.008);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
-      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.1);
+      const t = ctx.currentTime + 0.004, v = 0.92 + Math.random() * 0.16;
+      const f0 = (bright ? 440 : 330) * v;
+      tone(f0, t, { dur: 0.09, vol: bright ? 0.07 : 0.05, to: f0 * 2.6 });
+      tone(f0 * 3.01, t + 0.012, { dur: 0.05, vol: 0.012, to: f0 * 4 });
+    } catch (e) {}
+  }
+  function tick() { try { ensure(); const t = ctx.currentTime + 0.003; tone(1800 + Math.random() * 200, t, { type: 'triangle', dur: 0.03, vol: 0.025 }); } catch (e) {} }
+  // correct: two bell-like plucks (a rising major third)
+  function chime() {
+    try {
+      ensure(); const t = ctx.currentTime + 0.01;
+      pluck(79, t, { gain: 0.16, bright: 0.85, dur: 1.4, dest: uiBus, tone: 7000 });
+      pluck(83, t + 0.09, { gain: 0.18, bright: 0.85, dur: 1.6, dest: uiBus, tone: 7000 });
+      tone(1568, t + 0.09, { dur: 0.5, vol: 0.02 });
+    } catch (e) {}
+  }
+  // wrong: soft, low "boop" (no harsh buzzer)
+  function nope() {
+    try { ensure(); const t = ctx.currentTime + 0.01; tone(260, t, { dur: 0.18, vol: 0.07, to: 180 }); tone(195, t + 0.1, { dur: 0.22, vol: 0.05, to: 150 }); } catch (e) {}
+  }
+  // XP / reward: quick sparkling arpeggio
+  function sparkle(big = false) {
+    try {
+      ensure(); const t = ctx.currentTime + 0.01;
+      const notes = big ? [72, 76, 79, 84, 88, 91] : [79, 84, 88];
+      notes.forEach((m, i) => pluck(m, t + i * (big ? 0.075 : 0.06), { gain: big ? 0.16 : 0.1, bright: 0.9, dur: 1.4, dest: uiBus, tone: 8000 }));
+      if (big) tone(2093, t + notes.length * 0.075, { dur: 0.9, vol: 0.02 });
     } catch (e) {}
   }
 
@@ -940,7 +990,7 @@ const AudioEngine = (() => {
   }
 
   return {
-    ensure, now, pop, pluck, strum, click, STYLES,
+    ensure, now, pop, tick, chime, nope, sparkle, pluck, strum, click, STYLES,
     startBacking, stopBacking, setBackingVolume, get backingPlaying() { return backing.playing; },
     openInput, closeInput, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
     get inputOpen() { return !!recorder.stream; },
@@ -1430,8 +1480,8 @@ const CH_SHORTHAND = {
         { t: 'mc', id: 'qr-3c', q: '“7b9” means…', o: ['Play 7 then 9', 'Bend fret 7 up to the pitch of fret 9', 'Slide from 7 to 9', 'Barre 7 to 9'], a: 1, ex: 'A whole-step bend (2 frets).' },
         { t: 'mc', id: 'qr-3d', q: 'A “0” on a line means…', o: ['Don’t play', 'Open string', 'Mute', 'Fret 10'], a: 1, ex: '0 = no finger, open string.' },
       ],
-      practice: { type: 'drill', title: 'Play the tab riff', how: 'Read the riff from the lesson: open low E, A string 7, D string 5, D string 7 with a hammer-on to 9, then G string 7. It’s E minor pentatonic. Loop it slowly.', bpm: 70, pre: TAB_RIFF },
-      jam: { prompt: 'Start every phrase with the tab riff, then continue freely in E minor pentatonic.', style: 'rock', key: 'E', scale: 'minorPent', tone: 'Crunch' },
+      practice: { type: 'drill', title: 'Play the tab riff', how: 'Read the riff from the lesson: open low E, A string 7, D string 5, D string 7 with a hammer-on to 9, then G string 7. (These notes come from E minor pentatonic, which you’ll learn later.) Loop it slowly.', bpm: 70, pre: TAB_RIFF },
+      jam: { prompt: 'Start every phrase with the tab riff, then continue freely using the dots shown on the neck.', style: 'rock', key: 'E', scale: 'minorPent', tone: 'Crunch' },
     },
     {
       id: 'r-4', title: 'Sharps, flats and naturals',
@@ -1512,7 +1562,7 @@ const CH_RHYTHM = {
         { t: 'mc', id: 'qt-4b', q: 'A funk strumming hand usually…', o: ['Stops between hits', 'Keeps moving in 16ths', 'Plays only downstrokes on 1', 'Plays triplets'], a: 1, ex: 'Constant motion, only some strokes hit.' },
       ],
       practice: { type: 'drill', title: 'Only the “&”', how: 'Metronome on. Count “1 & 2 & 3 & 4 &” and play a short chord ONLY on the “&”s. Keep your hand moving down-up.', bpm: 80 },
-      jam: { prompt: 'Start your phrases on the “&” of beat 2 or 4 instead of on beat 1.', style: 'funk', key: 'A', scale: 'dorian', tone: 'Clean, bright' },
+      jam: { prompt: 'Start your phrases on the “&” of beat 2 or 4 instead of on beat 1.', style: 'funk', key: 'A', scale: 'minorPent', tone: 'Clean, bright' },
     },
   ],
 };
@@ -1851,9 +1901,19 @@ const CH_PHRASING = {
 
 // insert the new chapters at the right places
 (function placeChapters() {
+  // Order is built so every lesson only uses what came before it.
+  const take = (ch, id) => { const i = ch.lessons.findIndex(l => l.id === id); return ch.lessons.splice(i, 1)[0]; };
+  const chordNames = take(CH_SHORTHAND, 'r-2');   // needs intervals + chord building + sus/dim → end of More Chords
+  const sharpsFlats = take(CH_SHORTHAND, 'r-4');  // needs the major scale → opens the Keys chapter
+  CH_SHORTHAND.title = 'Reading Diagrams & Tabs';
+  CH_SHORTHAND.blurb = 'Read any chord diagram or tab a guitarist writes.';
+  CH_KEYS.lessons.unshift(sharpsFlats);
+  chordNames.title = 'Chord names decoded (cheat sheet)';
+  CH_MORECHORDS.lessons.push(chordNames);
   const at = id => CHAPTERS.findIndex(c => c.id === id);
-  CHAPTERS.splice(at('c1') + 1, 0, CH_SHORTHAND, CH_RHYTHM);
-  CHAPTERS.splice(at('c4') + 1, 0, CH_KEYS, CH_MORECHORDS);
+  CHAPTERS.splice(at('c1') + 1, 0, CH_SHORTHAND, CH_RHYTHM);          // Fretboard → Diagrams & Tabs → Rhythm
+  const pent = CHAPTERS.splice(at('c5'), 1)[0];
+  CHAPTERS.splice(at('c4') + 1, 0, pent, CH_KEYS, CH_MORECHORDS);     // Chords → Pentatonic → Keys → More Chords
   const c6 = CHAPTERS[at('c6')];
   c6.title = 'Target Notes & Arpeggios';
   c6.lessons.push(...EXTRA_TARGET_LESSONS);
@@ -1953,6 +2013,7 @@ function addXP(n, why) {
   const after = levelInfo();
   const unlockedNow = Object.entries(AudioEngine.STYLES).filter(([k, s]) => s.xp > Store.state.xp - n && s.xp <= Store.state.xp).map(([k, s]) => s.name);
   UI.toast(`+${n} XP · ${why}`);
+  sfx('sparkle');
   if (after.lvl > before.lvl) setTimeout(() => UI.celebrate(`Level ${after.lvl}!`, after.title), 600);
   if (unlockedNow.length) setTimeout(() => UI.celebrate('Unlocked!', `New backing track: ${unlockedNow.join(', ')}`), 1400);
 }
@@ -2223,6 +2284,7 @@ const UI = {
     });
   },
   celebrate(title, sub, emoji = '🎉') {
+    sfx('sparkle', true); setTimeout(() => confetti(110), 120);
     const md = UI.modal(h('div', { class: 'celebrate stack' },
       h('div', { class: 'big' }, emoji), h('h1', null, title), sub && h('p', { class: 'muted' }, sub),
       h('button', { class: 'btn primary block', onclick: () => md.close() }, 'Nice!')), { centered: true });
@@ -2273,6 +2335,41 @@ function ChordDiagram(rootPc, type, opts = {}) {
   return wrap;
 }
 
+// ---------- feedback sounds + confetti ----------
+function sfx(name, arg) {
+  try { if (Store.state && Store.state.settings.uiSounds === false) return; AudioEngine[name] && AudioEngine[name](arg); } catch (e) {}
+}
+function confetti(amount = 90) {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = document.createElement('canvas');
+    c.className = 'confetti';
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = innerWidth * dpr; c.height = innerHeight * dpr;
+    document.body.appendChild(c);
+    const g = c.getContext('2d'); g.scale(dpr, dpr);
+    const colors = ['#ffcf7a', '#f2a541', '#4fc18f', '#f4ede4', '#6cb4ee', '#ff8a8a'];
+    const parts = Array.from({ length: amount }, () => ({
+      x: innerWidth / 2 + (Math.random() - 0.5) * 80, y: innerHeight * 0.38,
+      vx: (Math.random() - 0.5) * 11, vy: -Math.random() * 12 - 4,
+      r: 3 + Math.random() * 4, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4,
+      col: colors[Math.floor(Math.random() * colors.length)], round: Math.random() < 0.4,
+    }));
+    const t0 = performance.now();
+    (function frame(now) {
+      const el = (now - t0) / 1000;
+      g.clearRect(0, 0, innerWidth, innerHeight);
+      parts.forEach(p => {
+        p.vy += 0.35; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        g.save(); g.globalAlpha = Math.max(0, 1 - el / 1.9); g.translate(p.x, p.y); g.rotate(p.rot); g.fillStyle = p.col;
+        if (p.round) { g.beginPath(); g.arc(0, 0, p.r * 0.7, 0, 7); g.fill(); } else g.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+        g.restore();
+      });
+      if (el < 2) requestAnimationFrame(frame); else c.remove();
+    })(t0);
+  } catch (e) {}
+}
+
 // ---------- Interactive components ----------
 
 // A single quiz question. onResult(correct) is called once the user continues.
@@ -2283,6 +2380,7 @@ function QuestionView(q, onResult) {
   const fbBox = h('div');
   function finish(correct, extra) {
     if (answered) return; answered = true;
+    sfx(correct ? 'chime' : 'nope');
     fbBox.appendChild(h('div', { class: 'feedback ' + (correct ? 'ok' : 'no') },
       h('b', null, correct ? 'Correct!' : 'Not quite.'), ' ', h('span', { class: 'muted' }, extra || q.ex || '')));
     fbBox.appendChild(h('button', { class: 'btn primary block', style: { marginTop: '12px' }, onclick: () => onResult(correct) }, 'Continue'));
@@ -2389,6 +2487,7 @@ function LessonPlayer(lesson, opts = {}) {
       h('p', { class: 'muted' }, `${correct} / ${quiz.length} correct. Missed questions will come back in your reviews.`),
       h('button', { class: 'btn primary block', onclick: () => opts.onDone && opts.onDone({ correct, total: quiz.length }) }, opts.doneLabel || 'Continue')));
     addXP(xp, reviewIds ? 'Review' : 'Lesson');
+    if (correct === quiz.length && quiz.length) setTimeout(() => confetti(70), 150);
   }
   render();
   return root;
@@ -2443,7 +2542,7 @@ function GameView(cfg, onDone) {
     opts.forEach(o => grid.appendChild(h('button', { class: 'option center', onclick: e => {
       if (grid.dataset.done) return; grid.dataset.done = 1;
       AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.35 });
-      if (o === pc) { score++; e.target.classList.add('right'); } else { e.target.classList.add('wrong'); [...grid.children][opts.indexOf(pc)].classList.add('right'); }
+      if (o === pc) { score++; e.target.classList.add('right'); sfx('chime'); } else { sfx('nope'); e.target.classList.add('wrong'); [...grid.children][opts.indexOf(pc)].classList.add('right'); }
       round++; setTimeout(next, o === pc ? 450 : 1100);
     } }, bothNames(o))));
     area.appendChild(grid);
@@ -2487,7 +2586,7 @@ function GameView(cfg, onDone) {
       AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.3 });
       AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now() + 0.35, { gain: 0.3 });
       if (ok) { done = true; score++; fb.addMark({ s: s2, f: f2, label: ivInfo.short, cls: 'good' }); round++; setTimeout(next, 900); }
-      else { const m = fb.addMark({ s: s2, f: f2, label: '✕', cls: 'bad' }); setTimeout(() => m.remove(), 600); score = Math.max(0, score - 0); round += 0; fb.dataset.miss = (+fb.dataset.miss || 0) + 1; if (+fb.dataset.miss >= 3) { done = true; showAnswer(); } }
+      else { sfx('nope'); const m = fb.addMark({ s: s2, f: f2, label: '✕', cls: 'bad' }); setTimeout(() => m.remove(), 600); score = Math.max(0, score - 0); round += 0; fb.dataset.miss = (+fb.dataset.miss || 0) + 1; if (+fb.dataset.miss >= 3) { done = true; showAnswer(); } }
     } });
     function showAnswer() {
       for (let s2 = 0; s2 < 6; s2++) for (let f2 = Math.max(0, f - 3); f2 <= Math.min(15, f + 6); f2++) {
@@ -2878,6 +2977,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
       if (answered) return; answered = true;
       if (ok) correct++;
       earRecord(level, ok);
+      sfx(ok ? 'chime' : 'nope');
       let hint = null;
       if (!ok && chosen && (level === 'N' || level === 4)) {
         const cp = pcOf(String(chosen).split('/')[0]), ap = pcOf(String(q.answer).split('/')[0]);
@@ -2925,6 +3025,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
       h('p', { class: 'muted' }, daily ? 'Daily challenge done. Come back tomorrow for a new one.' : 'Nice practice.'),
       h('button', { class: 'btn primary block', onclick: () => onDone && onDone(correct) }, 'Done')));
     if (xp) addXP(xp, daily ? 'Daily ear challenge' : 'Ear practice');
+    if (correct >= count * 0.8) setTimeout(() => confetti(80), 150);
   }
   root.start = () => { AudioEngine.ensure(); nextQ(); };
   return root;
@@ -3121,6 +3222,7 @@ function SessionView({ minutes }) {
       h('button', { class: 'btn primary block', onclick: () => App.go('home') }, 'Back home'));
     render();
     addXP(counted ? 40 + realMin : 10, counted ? 'Session complete' : 'Session');
+    if (counted) setTimeout(() => confetti(120), 200);
     if (reached) { st.weekBonus[wk] = true; Store.save(); setTimeout(() => { addXP(40, 'Weekly goal'); UI.celebrate('Week goal reached!', `+40 XP bonus. ${weekStreak()} week streak.`, '🔥'); }, 900); }
   }
   render();
@@ -3448,7 +3550,7 @@ function ProgressView() {
       try { const d = JSON.parse(txt); delete d.exported; Store.state = { ...defaultState(), ...d }; Store.save(); UI.toast('Progress restored'); App.go('progress'); } catch (e) { UI.toast('That doesn’t look like a backup'); }
     } }, 'Restore progress backup'),
     h('button', { class: 'btn danger block', onclick: async () => { if (await UI.confirm('Reset all progress?', 'XP, lessons and stats will be erased. Recordings stay in the Journal.', 'Reset', true)) { Store.reset(); App.go('home'); } } }, 'Reset progress'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.4')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.5')));
   return root;
 }
 

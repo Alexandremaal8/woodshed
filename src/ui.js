@@ -158,6 +158,7 @@ const UI = {
     });
   },
   celebrate(title, sub, emoji = '🎉') {
+    sfx('sparkle', true); setTimeout(() => confetti(110), 120);
     const md = UI.modal(h('div', { class: 'celebrate stack' },
       h('div', { class: 'big' }, emoji), h('h1', null, title), sub && h('p', { class: 'muted' }, sub),
       h('button', { class: 'btn primary block', onclick: () => md.close() }, 'Nice!')), { centered: true });
@@ -206,4 +207,39 @@ function ChordDiagram(rootPc, type, opts = {}) {
     AudioEngine.strum(frets.map((f, i) => f >= 0 ? fretMidi(i, f) : null).filter(x => x !== null), AudioEngine.now() + 0.02, { gain: 0.32, spread: 0.035 });
   } }, h('b', null, opts.label || fullChordName(rootPc, type).replace(/ \(.*\)/, '')), svg, opts.caption ? h('small', { class: 'muted', style: { fontSize: '11px' } }, opts.caption) : null);
   return wrap;
+}
+
+// ---------- feedback sounds + confetti ----------
+function sfx(name, arg) {
+  try { if (Store.state && Store.state.settings.uiSounds === false) return; AudioEngine[name] && AudioEngine[name](arg); } catch (e) {}
+}
+function confetti(amount = 90) {
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const c = document.createElement('canvas');
+    c.className = 'confetti';
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = innerWidth * dpr; c.height = innerHeight * dpr;
+    document.body.appendChild(c);
+    const g = c.getContext('2d'); g.scale(dpr, dpr);
+    const colors = ['#ffcf7a', '#f2a541', '#4fc18f', '#f4ede4', '#6cb4ee', '#ff8a8a'];
+    const parts = Array.from({ length: amount }, () => ({
+      x: innerWidth / 2 + (Math.random() - 0.5) * 80, y: innerHeight * 0.38,
+      vx: (Math.random() - 0.5) * 11, vy: -Math.random() * 12 - 4,
+      r: 3 + Math.random() * 4, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4,
+      col: colors[Math.floor(Math.random() * colors.length)], round: Math.random() < 0.4,
+    }));
+    const t0 = performance.now();
+    (function frame(now) {
+      const el = (now - t0) / 1000;
+      g.clearRect(0, 0, innerWidth, innerHeight);
+      parts.forEach(p => {
+        p.vy += 0.35; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        g.save(); g.globalAlpha = Math.max(0, 1 - el / 1.9); g.translate(p.x, p.y); g.rotate(p.rot); g.fillStyle = p.col;
+        if (p.round) { g.beginPath(); g.arc(0, 0, p.r * 0.7, 0, 7); g.fill(); } else g.fillRect(-p.r, -p.r / 2, p.r * 2, p.r);
+        g.restore();
+      });
+      if (el < 2) requestAnimationFrame(frame); else c.remove();
+    })(t0);
+  } catch (e) {}
 }

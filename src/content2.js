@@ -59,8 +59,8 @@ const CH_SHORTHAND = {
         { t: 'mc', id: 'qr-3c', q: '“7b9” means…', o: ['Play 7 then 9', 'Bend fret 7 up to the pitch of fret 9', 'Slide from 7 to 9', 'Barre 7 to 9'], a: 1, ex: 'A whole-step bend (2 frets).' },
         { t: 'mc', id: 'qr-3d', q: 'A “0” on a line means…', o: ['Don’t play', 'Open string', 'Mute', 'Fret 10'], a: 1, ex: '0 = no finger, open string.' },
       ],
-      practice: { type: 'drill', title: 'Play the tab riff', how: 'Read the riff from the lesson: open low E, A string 7, D string 5, D string 7 with a hammer-on to 9, then G string 7. It’s E minor pentatonic. Loop it slowly.', bpm: 70, pre: TAB_RIFF },
-      jam: { prompt: 'Start every phrase with the tab riff, then continue freely in E minor pentatonic.', style: 'rock', key: 'E', scale: 'minorPent', tone: 'Crunch' },
+      practice: { type: 'drill', title: 'Play the tab riff', how: 'Read the riff from the lesson: open low E, A string 7, D string 5, D string 7 with a hammer-on to 9, then G string 7. (These notes come from E minor pentatonic, which you’ll learn later.) Loop it slowly.', bpm: 70, pre: TAB_RIFF },
+      jam: { prompt: 'Start every phrase with the tab riff, then continue freely using the dots shown on the neck.', style: 'rock', key: 'E', scale: 'minorPent', tone: 'Crunch' },
     },
     {
       id: 'r-4', title: 'Sharps, flats and naturals',
@@ -141,7 +141,7 @@ const CH_RHYTHM = {
         { t: 'mc', id: 'qt-4b', q: 'A funk strumming hand usually…', o: ['Stops between hits', 'Keeps moving in 16ths', 'Plays only downstrokes on 1', 'Plays triplets'], a: 1, ex: 'Constant motion, only some strokes hit.' },
       ],
       practice: { type: 'drill', title: 'Only the “&”', how: 'Metronome on. Count “1 & 2 & 3 & 4 &” and play a short chord ONLY on the “&”s. Keep your hand moving down-up.', bpm: 80 },
-      jam: { prompt: 'Start your phrases on the “&” of beat 2 or 4 instead of on beat 1.', style: 'funk', key: 'A', scale: 'dorian', tone: 'Clean, bright' },
+      jam: { prompt: 'Start your phrases on the “&” of beat 2 or 4 instead of on beat 1.', style: 'funk', key: 'A', scale: 'minorPent', tone: 'Clean, bright' },
     },
   ],
 };
@@ -480,9 +480,19 @@ const CH_PHRASING = {
 
 // insert the new chapters at the right places
 (function placeChapters() {
+  // Order is built so every lesson only uses what came before it.
+  const take = (ch, id) => { const i = ch.lessons.findIndex(l => l.id === id); return ch.lessons.splice(i, 1)[0]; };
+  const chordNames = take(CH_SHORTHAND, 'r-2');   // needs intervals + chord building + sus/dim → end of More Chords
+  const sharpsFlats = take(CH_SHORTHAND, 'r-4');  // needs the major scale → opens the Keys chapter
+  CH_SHORTHAND.title = 'Reading Diagrams & Tabs';
+  CH_SHORTHAND.blurb = 'Read any chord diagram or tab a guitarist writes.';
+  CH_KEYS.lessons.unshift(sharpsFlats);
+  chordNames.title = 'Chord names decoded (cheat sheet)';
+  CH_MORECHORDS.lessons.push(chordNames);
   const at = id => CHAPTERS.findIndex(c => c.id === id);
-  CHAPTERS.splice(at('c1') + 1, 0, CH_SHORTHAND, CH_RHYTHM);
-  CHAPTERS.splice(at('c4') + 1, 0, CH_KEYS, CH_MORECHORDS);
+  CHAPTERS.splice(at('c1') + 1, 0, CH_SHORTHAND, CH_RHYTHM);          // Fretboard → Diagrams & Tabs → Rhythm
+  const pent = CHAPTERS.splice(at('c5'), 1)[0];
+  CHAPTERS.splice(at('c4') + 1, 0, pent, CH_KEYS, CH_MORECHORDS);     // Chords → Pentatonic → Keys → More Chords
   const c6 = CHAPTERS[at('c6')];
   c6.title = 'Target Notes & Arpeggios';
   c6.lessons.push(...EXTRA_TARGET_LESSONS);

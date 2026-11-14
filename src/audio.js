@@ -1,6 +1,6 @@
 // ---------- Audio engine: guitar synth, drums, backing tracks, recorder ----------
 const AudioEngine = (() => {
-  let ctx = null, master, backingBus, sfxBus, noiseBuf;
+  let ctx = null, master, backingBus, sfxBus, uiBus, noiseBuf;
   const ksCache = new Map();
 
   function setSession(type) {
@@ -17,6 +17,18 @@ const AudioEngine = (() => {
       master.connect(comp); comp.connect(ctx.destination);
       backingBus = ctx.createGain(); backingBus.gain.value = 0.8; backingBus.connect(master);
       sfxBus = ctx.createGain(); sfxBus.gain.value = 1; sfxBus.connect(master);
+      // small room reverb: makes the guitar synth and UI sounds less dry
+      try {
+        const len = Math.floor(ctx.sampleRate * 1.6), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+        for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+        const verb = ctx.createConvolver(); verb.buffer = ir;
+        const wet = ctx.createGain(); wet.gain.value = 0.22;
+        verb.connect(wet); wet.connect(master);
+        const sfxSend = ctx.createGain(); sfxSend.gain.value = 0.55; sfxBus.connect(sfxSend); sfxSend.connect(verb);
+        const bSend = ctx.createGain(); bSend.gain.value = 0.25; backingBus.connect(bSend); bSend.connect(verb);
+        uiBus = ctx.createGain(); uiBus.gain.value = 1; uiBus.connect(master);
+        const uiSend = ctx.createGain(); uiSend.gain.value = 0.35; uiBus.connect(uiSend); uiSend.connect(verb);
+      } catch (e) { uiBus = sfxBus; }
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -83,20 +95,47 @@ const AudioEngine = (() => {
   }
 
   function now() { ensure(); return ctx.currentTime; }
-  // soft UI "bubble pop"
+  // ---------- UI sounds ----------
+  function tone(f, t, { type = 'sine', dur = 0.12, vol = 0.06, to = null, attack = 0.006 } = {}) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t + dur * 0.6);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(uiBus); o.start(t); o.stop(t + dur + 0.02);
+  }
+  // soft water-drop "bubble": slightly different every time so it never feels robotic
   function pop(bright = false) {
     try {
       ensure();
-      const t = ctx.currentTime + 0.005;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine';
-      const f0 = bright ? 520 : 380;
-      o.frequency.setValueAtTime(f0, t);
-      o.frequency.exponentialRampToValueAtTime(f0 * 2.1, t + 0.05);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.06, t + 0.008);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
-      o.connect(g); g.connect(sfxBus); o.start(t); o.stop(t + 0.1);
+      const t = ctx.currentTime + 0.004, v = 0.92 + Math.random() * 0.16;
+      const f0 = (bright ? 440 : 330) * v;
+      tone(f0, t, { dur: 0.09, vol: bright ? 0.07 : 0.05, to: f0 * 2.6 });
+      tone(f0 * 3.01, t + 0.012, { dur: 0.05, vol: 0.012, to: f0 * 4 });
+    } catch (e) {}
+  }
+  function tick() { try { ensure(); const t = ctx.currentTime + 0.003; tone(1800 + Math.random() * 200, t, { type: 'triangle', dur: 0.03, vol: 0.025 }); } catch (e) {} }
+  // correct: two bell-like plucks (a rising major third)
+  function chime() {
+    try {
+      ensure(); const t = ctx.currentTime + 0.01;
+      pluck(79, t, { gain: 0.16, bright: 0.85, dur: 1.4, dest: uiBus, tone: 7000 });
+      pluck(83, t + 0.09, { gain: 0.18, bright: 0.85, dur: 1.6, dest: uiBus, tone: 7000 });
+      tone(1568, t + 0.09, { dur: 0.5, vol: 0.02 });
+    } catch (e) {}
+  }
+  // wrong: soft, low "boop" (no harsh buzzer)
+  function nope() {
+    try { ensure(); const t = ctx.currentTime + 0.01; tone(260, t, { dur: 0.18, vol: 0.07, to: 180 }); tone(195, t + 0.1, { dur: 0.22, vol: 0.05, to: 150 }); } catch (e) {}
+  }
+  // XP / reward: quick sparkling arpeggio
+  function sparkle(big = false) {
+    try {
+      ensure(); const t = ctx.currentTime + 0.01;
+      const notes = big ? [72, 76, 79, 84, 88, 91] : [79, 84, 88];
+      notes.forEach((m, i) => pluck(m, t + i * (big ? 0.075 : 0.06), { gain: big ? 0.16 : 0.1, bright: 0.9, dur: 1.4, dest: uiBus, tone: 8000 }));
+      if (big) tone(2093, t + notes.length * 0.075, { dur: 0.9, vol: 0.02 });
     } catch (e) {}
   }
 
@@ -372,7 +411,7 @@ const AudioEngine = (() => {
   }
 
   return {
-    ensure, now, pop, pluck, strum, click, STYLES,
+    ensure, now, pop, tick, chime, nope, sparkle, pluck, strum, click, STYLES,
     startBacking, stopBacking, setBackingVolume, get backingPlaying() { return backing.playing; },
     openInput, closeInput, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
     get inputOpen() { return !!recorder.stream; },

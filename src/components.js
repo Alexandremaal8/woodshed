@@ -8,6 +8,7 @@ function QuestionView(q, onResult) {
   const fbBox = h('div');
   function finish(correct, extra) {
     if (answered) return; answered = true;
+    sfx(correct ? 'chime' : 'nope');
     fbBox.appendChild(h('div', { class: 'feedback ' + (correct ? 'ok' : 'no') },
       h('b', null, correct ? 'Correct!' : 'Not quite.'), ' ', h('span', { class: 'muted' }, extra || q.ex || '')));
     fbBox.appendChild(h('button', { class: 'btn primary block', style: { marginTop: '12px' }, onclick: () => onResult(correct) }, 'Continue'));
@@ -114,6 +115,7 @@ function LessonPlayer(lesson, opts = {}) {
       h('p', { class: 'muted' }, `${correct} / ${quiz.length} correct. Missed questions will come back in your reviews.`),
       h('button', { class: 'btn primary block', onclick: () => opts.onDone && opts.onDone({ correct, total: quiz.length }) }, opts.doneLabel || 'Continue')));
     addXP(xp, reviewIds ? 'Review' : 'Lesson');
+    if (correct === quiz.length && quiz.length) setTimeout(() => confetti(70), 150);
   }
   render();
   return root;
@@ -168,7 +170,7 @@ function GameView(cfg, onDone) {
     opts.forEach(o => grid.appendChild(h('button', { class: 'option center', onclick: e => {
       if (grid.dataset.done) return; grid.dataset.done = 1;
       AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.35 });
-      if (o === pc) { score++; e.target.classList.add('right'); } else { e.target.classList.add('wrong'); [...grid.children][opts.indexOf(pc)].classList.add('right'); }
+      if (o === pc) { score++; e.target.classList.add('right'); sfx('chime'); } else { sfx('nope'); e.target.classList.add('wrong'); [...grid.children][opts.indexOf(pc)].classList.add('right'); }
       round++; setTimeout(next, o === pc ? 450 : 1100);
     } }, bothNames(o))));
     area.appendChild(grid);
@@ -212,7 +214,7 @@ function GameView(cfg, onDone) {
       AudioEngine.pluck(fretMidi(st, f), AudioEngine.now(), { gain: 0.3 });
       AudioEngine.pluck(fretMidi(s2, f2), AudioEngine.now() + 0.35, { gain: 0.3 });
       if (ok) { done = true; score++; fb.addMark({ s: s2, f: f2, label: ivInfo.short, cls: 'good' }); round++; setTimeout(next, 900); }
-      else { const m = fb.addMark({ s: s2, f: f2, label: '✕', cls: 'bad' }); setTimeout(() => m.remove(), 600); score = Math.max(0, score - 0); round += 0; fb.dataset.miss = (+fb.dataset.miss || 0) + 1; if (+fb.dataset.miss >= 3) { done = true; showAnswer(); } }
+      else { sfx('nope'); const m = fb.addMark({ s: s2, f: f2, label: '✕', cls: 'bad' }); setTimeout(() => m.remove(), 600); score = Math.max(0, score - 0); round += 0; fb.dataset.miss = (+fb.dataset.miss || 0) + 1; if (+fb.dataset.miss >= 3) { done = true; showAnswer(); } }
     } });
     function showAnswer() {
       for (let s2 = 0; s2 < 6; s2++) for (let f2 = Math.max(0, f - 3); f2 <= Math.min(15, f + 6); f2++) {
@@ -603,6 +605,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
       if (answered) return; answered = true;
       if (ok) correct++;
       earRecord(level, ok);
+      sfx(ok ? 'chime' : 'nope');
       let hint = null;
       if (!ok && chosen && (level === 'N' || level === 4)) {
         const cp = pcOf(String(chosen).split('/')[0]), ap = pcOf(String(q.answer).split('/')[0]);
@@ -650,6 +653,7 @@ function EarRun({ levels, count = 10, daily = false, onDone }) {
       h('p', { class: 'muted' }, daily ? 'Daily challenge done. Come back tomorrow for a new one.' : 'Nice practice.'),
       h('button', { class: 'btn primary block', onclick: () => onDone && onDone(correct) }, 'Done')));
     if (xp) addXP(xp, daily ? 'Daily ear challenge' : 'Ear practice');
+    if (correct >= count * 0.8) setTimeout(() => confetti(80), 150);
   }
   root.start = () => { AudioEngine.ensure(); nextQ(); };
   return root;
