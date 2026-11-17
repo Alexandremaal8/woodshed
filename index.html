@@ -3696,7 +3696,7 @@ function ProgressView() {
       try { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.update())); } catch (e) {}
       setTimeout(() => location.reload(), 400);
     } }, '🔄 Update the app now'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.8 · your progress is never touched by updates')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.8.1 · your progress is never touched by updates')));
   return root;
 }
 
@@ -4240,7 +4240,7 @@ function CalibrateView() {
     h('div', { class: 'card stack' },
       h('h3', null, 'How to measure'),
       h('p', { class: 'small' }, '1. Plug in the Pulze and headphones, exactly like when you record.'),
-      h('p', { class: 'small' }, '2. Mute the strings with your fretting hand.'),
+      h('p', { class: 'small' }, '2. Pick a CLEAN sound on the Pulze (no distortion, delay or reverb) and mute the strings with your fretting hand.'),
       h('p', { class: 'small' }, '3. You’ll hear 4 count-in clicks, then 8 clicks. Strum the muted strings exactly ON each of the 8 clicks.')),
     card,
     h('button', { class: 'btn primary big block', onclick: () => run() }, '⏱ Start measuring'),
@@ -4264,41 +4264,54 @@ function CalibrateView() {
     status.textContent = 'Listening to the room…';
     big.textContent = '…';
     [...beats.children].forEach(x => x.classList.remove('on'));
-    // 1) measure the noise floor
-    let floor = 0, n = 0;
+    // 1) measure the noise floor (RMS)
+    const fl = [];
     const t0 = performance.now();
-    await new Promise(r => { const iv = setInterval(() => { const b = AudioEngine.inputBuffer(); if (b) { let m = 0; for (const x of b.data) m = Math.max(m, Math.abs(x)); floor += m; n++; } if (performance.now() - t0 > 500) { clearInterval(iv); r(); } }, 20); });
-    floor = n ? floor / n : 0.01;
-    const thresh = Math.max(0.03, floor * 5);
+    await new Promise(r => { const iv = setInterval(() => { const b = AudioEngine.inputBuffer(); if (b) { for (let f = 0; f + 128 <= b.data.length; f += 128) { let s2 = 0; for (let i = f; i < f + 128; i++) s2 += b.data[i] * b.data[i]; fl.push(Math.sqrt(s2 / 128)); } } if (performance.now() - t0 > 500) { clearInterval(iv); r(); } }, 20); });
+    fl.sort((a, b) => a - b);
+    const floor = fl.length ? fl[Math.floor(fl.length * 0.3)] : 0.002; // quiet part of the room/amp noise
     // 2) schedule clicks: 4 count-in + 8 measured, 100 BPM
     const spb = 0.6, start = AudioEngine.now() + 0.4;
     const clicks = [];
     for (let i = 0; i < 12; i++) { const t = start + i * spb; AudioEngine.click(t, i % 4 === 0); if (i >= 4) clicks.push(t); }
     status.textContent = 'Count-in… then strum on every click';
     const hits = [];
-    let on = false, lastOn = 0;
+    // Onset detection on the energy JUMP, not on a fixed level: works with distortion,
+    // reverb or delay on the Pulze, where the sound never really goes quiet between strums.
+    const F = 128;
+    let lastEnd = 0, slow = floor, lastHit = -1;
     timer = setInterval(() => {
       const b = AudioEngine.inputBuffer(); if (!b) return;
-      const now = b.end;
-      // visual beat
+      const N = b.data.length, now = b.end;
       const k = Math.floor((now - clicks[0]) / spb);
       [...beats.children].forEach((x, i) => x.classList.toggle('on', i <= k && k < 8));
-      let peak = 0; for (let i = b.data.length - 256; i < b.data.length; i++) peak = Math.max(peak, Math.abs(b.data[i]));
-      if (!on && peak > thresh && now - lastOn > 0.2) {
-        // locate the onset precisely inside the buffer
-        let idx = -1; for (let i = 0; i < b.data.length; i++) if (Math.abs(b.data[i]) > thresh) { idx = i; break; }
-        if (idx >= 0) { const onset = now - (b.data.length - idx) / b.sr; hits.push(onset); lastOn = onset; }
-        on = true;
-      } else if (on && peak < thresh * 0.5) on = false;
+      for (let f = 0; f + F <= N; f += F) {
+        const fEnd = now - (N - f - F) / b.sr;
+        if (fEnd <= lastEnd + 1e-6) continue;
+        let s2 = 0, pk = 0;
+        for (let i = f; i < f + F; i++) { const v = b.data[i]; s2 += v * v; if (Math.abs(v) > pk) pk = Math.abs(v); }
+        const rms = Math.sqrt(s2 / F);
+        const fStart = fEnd - F / b.sr;
+        if (rms > Math.max(slow * 1.6, floor * 2.5, 0.0015) && fStart - lastHit > 0.25) {
+          let idx = f; for (let i = f; i < f + F; i++) if (Math.abs(b.data[i]) > pk * 0.4) { idx = i; break; }
+          const onset = now - (N - idx) / b.sr;
+          hits.push(onset); lastHit = onset;
+          status.textContent = `Strum on every click · heard ${hits.filter(x => x > clicks[0] - 0.15).length}`;
+          slow = rms; // the new note becomes the reference so its own sustain doesn't retrigger
+        } else {
+          slow = slow * 0.9 + rms * 0.1;
+        }
+        lastEnd = fEnd;
+      }
       if (now > clicks[clicks.length - 1] + 0.6) finish(clicks, hits);
-    }, 8);
+    }, 10);
   }
   function finish(clicks, hits) {
     clearInterval(timer); AudioEngine.closeInput(); active = false;
     const lat = [];
     clicks.forEach(c => { const m = hits.filter(x => x > c - 0.1 && x < c + 0.45).sort((a, b) => Math.abs(a - c) - Math.abs(b - c))[0]; if (m !== undefined) lat.push((m - c) * 1000); });
     [...beats.children].forEach(x => x.classList.remove('on'));
-    if (lat.length < 5) { big.textContent = '?'; status.textContent = `Only ${lat.length} hits detected. Strum a bit harder, exactly on the clicks, and try again.`; sfx('nope'); return; }
+    if (lat.length < 5) { big.textContent = '?'; status.textContent = `Only ${lat.length} of 8 strums matched the clicks. Check that the Pulze is selected as the input (Progress › Audio input) and that you strum right on the clicks, then try again.`; sfx('nope'); return; }
     lat.sort((a, b) => a - b);
     const med = Math.max(0, Math.round(lat[Math.floor(lat.length / 2)] / 5) * 5);
     const spread = Math.round(lat[lat.length - 2] - lat[1]);

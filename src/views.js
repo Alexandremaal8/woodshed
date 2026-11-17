@@ -546,6 +546,6 @@ function ProgressView() {
       try { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.update())); } catch (e) {}
       setTimeout(() => location.reload(), 400);
     } }, '🔄 Update the app now'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.8 · your progress is never touched by updates')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.8.1 · your progress is never touched by updates')));
   return root;
 }
