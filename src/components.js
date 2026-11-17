@@ -388,7 +388,7 @@ function StudioView(cfg = {}, opts = {}) {
       AudioEngine.setMonitor(st.settings.monitor);
       if (!AudioEngine.backingPlaying && style !== 'metronome') startPlay();
       if (!AudioEngine.backingPlaying && style === 'metronome') startPlay();
-      AudioEngine.startRecording({ includeBacking: st.settings.includeBacking, backingLevel: st.settings.backingInRec });
+      AudioEngine.startRecording({ includeBacking: st.settings.includeBacking, backingLevel: st.settings.backingInRec, syncMs: st.settings.syncMs ?? AudioEngine.estimatedLatencyMs() });
       recBtn.classList.add('on');
       recStatus.innerHTML = '';
       recStatus.append(h('span', { class: 'recdot' }), ' Recording…');
@@ -477,9 +477,11 @@ function StudioView(cfg = {}, opts = {}) {
       h('div', { class: 'row', style: { justifyContent: 'center' } }, recBtn),
       h('div', { class: 'row' }, recTime, meter),
       recStatus,
+      opts.mode === 'session' ? null : h('button', { class: 'btn sm ghost', onclick: () => { cleanupStudio(); App.go('calibrate'); } }, `⏱ Recording sync: ${st.settings.syncMs ?? 'auto'}${st.settings.syncMs != null ? ' ms' : ''} · calibrate`),
       opts.footer || null));
     renderFretboard();
   }
+  function cleanupStudio() { cancelAnimationFrame(meterRAF); if (AudioEngine.isRecording()) AudioEngine.stopRecording(); AudioEngine.stopBacking(); AudioEngine.closeInput(); }
   render();
   root.cleanup = () => { cancelAnimationFrame(meterRAF); if (AudioEngine.isRecording()) AudioEngine.stopRecording(); AudioEngine.stopBacking(); AudioEngine.closeInput(); };
   return root;

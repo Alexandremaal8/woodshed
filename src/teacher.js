@@ -263,3 +263,98 @@ function teacherNote() {
   if (nl) return { text: `Next on your path: “${nl.title}” (${nl.chapter.title}). Then record a jam and compare it with an old take.`, cta: 'Open lesson', go: () => App.go('lesson', { id: nl.id }) };
   return { text: 'You’ve done every lesson! Keep recording solos and compare them with your first takes.', cta: 'Studio', go: () => App.go('studio') };
 }
+
+// ---------- Recording sync calibration ----------
+// The app plays clicks; you hit muted strings on each click. It measures how late your guitar arrives
+// compared to when the click was generated, and uses that to line up the backing in your recordings.
+function CalibrateView() {
+  const st = Store.state;
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Recording sync', { back: () => { stop(); App.go('studio'); } }));
+  const status = h('p', { class: 'muted center' }, '');
+  const big = h('div', { class: 'livenote', style: { fontSize: '56px' } }, '–');
+  const beats = h('div', { class: 'row', style: { justifyContent: 'center' } }, Array.from({ length: 8 }, () => h('i', { class: 'beat' })));
+  const card = h('div', { class: 'card center stack' }, big, beats, status);
+  let timer = null, active = false;
+  const cur = st.settings.syncMs;
+  const valLbl = h('b', null, cur != null ? `${cur} ms` : `auto (${AudioEngine.estimatedLatencyMs()} ms)`);
+  const slider = h('input', { type: 'range', class: 'slider', min: 0, max: 400, step: 5, value: cur ?? 0, oninput: e => { st.settings.syncMs = +e.target.value; Store.save(); valLbl.textContent = `${st.settings.syncMs} ms`; } });
+
+  root.append(
+    h('div', { class: 'card stack' },
+      h('h3', null, 'Why your takes can sound late'),
+      h('p', { class: 'small muted' }, 'The backing takes a moment to reach your ears, and your guitar takes a moment to come back into the iPhone. In the recording, your playing ends up slightly behind the backing. Measure it once and the app lines them up for you.')),
+    h('div', { class: 'card stack' },
+      h('h3', null, 'How to measure'),
+      h('p', { class: 'small' }, '1. Plug in the Pulze and headphones, exactly like when you record.'),
+      h('p', { class: 'small' }, '2. Mute the strings with your fretting hand.'),
+      h('p', { class: 'small' }, '3. You’ll hear 4 count-in clicks, then 8 clicks. Strum the muted strings exactly ON each of the 8 clicks.')),
+    card,
+    h('button', { class: 'btn primary big block', onclick: () => run() }, '⏱ Start measuring'),
+    h('div', { class: 'card stack' },
+      h('div', { class: 'row between' }, h('span', null, 'Recording sync'), valLbl),
+      slider,
+      h('p', { class: 'small muted' }, 'Fine-tune by hand: if your guitar still sounds late in the Journal, move it right. If it sounds early, move it left.'),
+      h('button', { class: 'btn sm', onclick: () => { st.settings.syncMs = null; Store.save(); valLbl.textContent = `auto (${AudioEngine.estimatedLatencyMs()} ms)`; slider.value = 0; } }, 'Reset to auto')));
+
+  function stop() { active = false; clearInterval(timer); AudioEngine.closeInput(); }
+
+  async function run() {
+    if (active) return;
+    try {
+      AudioEngine.ensure();
+      await AudioEngine.openInput(st.settings.inputId);
+      AudioEngine.setInputGain(st.settings.inputGain);
+      AudioEngine.setMonitor(false);
+    } catch (e) { UI.toast('Could not open the input. Allow microphone access.'); return; }
+    active = true;
+    status.textContent = 'Listening to the room…';
+    big.textContent = '…';
+    [...beats.children].forEach(x => x.classList.remove('on'));
+    // 1) measure the noise floor
+    let floor = 0, n = 0;
+    const t0 = performance.now();
+    await new Promise(r => { const iv = setInterval(() => { const b = AudioEngine.inputBuffer(); if (b) { let m = 0; for (const x of b.data) m = Math.max(m, Math.abs(x)); floor += m; n++; } if (performance.now() - t0 > 500) { clearInterval(iv); r(); } }, 20); });
+    floor = n ? floor / n : 0.01;
+    const thresh = Math.max(0.03, floor * 5);
+    // 2) schedule clicks: 4 count-in + 8 measured, 100 BPM
+    const spb = 0.6, start = AudioEngine.now() + 0.4;
+    const clicks = [];
+    for (let i = 0; i < 12; i++) { const t = start + i * spb; AudioEngine.click(t, i % 4 === 0); if (i >= 4) clicks.push(t); }
+    status.textContent = 'Count-in… then strum on every click';
+    const hits = [];
+    let on = false, lastOn = 0;
+    timer = setInterval(() => {
+      const b = AudioEngine.inputBuffer(); if (!b) return;
+      const now = b.end;
+      // visual beat
+      const k = Math.floor((now - clicks[0]) / spb);
+      [...beats.children].forEach((x, i) => x.classList.toggle('on', i <= k && k < 8));
+      let peak = 0; for (let i = b.data.length - 256; i < b.data.length; i++) peak = Math.max(peak, Math.abs(b.data[i]));
+      if (!on && peak > thresh && now - lastOn > 0.2) {
+        // locate the onset precisely inside the buffer
+        let idx = -1; for (let i = 0; i < b.data.length; i++) if (Math.abs(b.data[i]) > thresh) { idx = i; break; }
+        if (idx >= 0) { const onset = now - (b.data.length - idx) / b.sr; hits.push(onset); lastOn = onset; }
+        on = true;
+      } else if (on && peak < thresh * 0.5) on = false;
+      if (now > clicks[clicks.length - 1] + 0.6) finish(clicks, hits);
+    }, 8);
+  }
+  function finish(clicks, hits) {
+    clearInterval(timer); AudioEngine.closeInput(); active = false;
+    const lat = [];
+    clicks.forEach(c => { const m = hits.filter(x => x > c - 0.1 && x < c + 0.45).sort((a, b) => Math.abs(a - c) - Math.abs(b - c))[0]; if (m !== undefined) lat.push((m - c) * 1000); });
+    [...beats.children].forEach(x => x.classList.remove('on'));
+    if (lat.length < 5) { big.textContent = '?'; status.textContent = `Only ${lat.length} hits detected. Strum a bit harder, exactly on the clicks, and try again.`; sfx('nope'); return; }
+    lat.sort((a, b) => a - b);
+    const med = Math.max(0, Math.round(lat[Math.floor(lat.length / 2)] / 5) * 5);
+    const spread = Math.round(lat[lat.length - 2] - lat[1]);
+    st.settings.syncMs = med; Store.save();
+    big.textContent = `${med} ms`;
+    valLbl.textContent = `${med} ms`; slider.value = med;
+    status.textContent = spread > 80 ? `Saved. Your hits were a bit uneven (±${Math.round(spread / 2)} ms), so try once more to be sure.` : 'Saved! Your next recordings will be lined up with the backing.';
+    sfx('chime');
+  }
+  root.cleanup = stop;
+  return root;
+}

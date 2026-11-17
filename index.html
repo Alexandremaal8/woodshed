@@ -980,6 +980,23 @@ const AudioEngine = (() => {
     return { freq, midi, pc: mod12(midi), cents: Math.round((midiF - midi) * 100), clarity: 1 - a1, rms };
   }
 
+  function estimatedLatencyMs() {
+    try {
+      ensure();
+      let ms = ((ctx.outputLatency || 0) + (ctx.baseLatency || 0)) * 1000;
+      const tr = recorder.stream && recorder.stream.getAudioTracks()[0];
+      const il = tr && tr.getSettings && tr.getSettings().latency;
+      if (il) ms += il * 1000;
+      return Math.round(ms);
+    } catch (e) { return 0; }
+  }
+  function inputBuffer() {
+    if (!recorder.analyser) return null;
+    const a = new Float32Array(recorder.analyser.fftSize);
+    recorder.analyser.getFloatTimeDomainData(a);
+    return { data: a, end: ctx.currentTime, sr: ctx.sampleRate };
+  }
+
   function closeInput() {
     if (recorder.mr && recorder.mr.state !== 'inactive') { try { recorder.mr.stop(); } catch (e) {} }
     setMonitor(false);
@@ -989,7 +1006,7 @@ const AudioEngine = (() => {
     setSession('playback');
   }
 
-  function startRecording({ includeBacking = true, backingLevel = 0.6 } = {}) {
+  function startRecording({ includeBacking = true, backingLevel = 0.6, syncMs = 0 } = {}) {
     if (!recorder.stream) throw new Error('Input not open');
     const mime = pickMime();
     let streamToRecord = null;
@@ -998,7 +1015,10 @@ const AudioEngine = (() => {
       recorder.inGain.connect(recorder.recDest);
       if (includeBacking) {
         recorder.toRec = ctx.createGain(); recorder.toRec.gain.value = backingLevel;
-        backingBus.connect(recorder.toRec); recorder.toRec.connect(recorder.recDest);
+        // latency compensation: the guitar reaches the app later than the backing was generated
+        // (output latency + your reaction to what you hear + input latency), so delay the backing by the same amount
+        recorder.recDelay = ctx.createDelay(1.5); recorder.recDelay.delayTime.value = Math.max(0, Math.min(1.4, syncMs / 1000));
+        backingBus.connect(recorder.toRec); recorder.toRec.connect(recorder.recDelay); recorder.recDelay.connect(recorder.recDest);
       }
       streamToRecord = recorder.recDest.stream;
     } catch (e) { streamToRecord = recorder.stream; }
@@ -1020,7 +1040,7 @@ const AudioEngine = (() => {
         const type = mr.mimeType || (recorder.chunks[0] && recorder.chunks[0].type) || 'audio/mp4';
         const blob = new Blob(recorder.chunks, { type });
         try { recorder.recDest && recorder.inGain && recorder.inGain.disconnect(recorder.recDest); } catch (e) {}
-        try { if (recorder.toRec) { backingBus.disconnect(recorder.toRec); recorder.toRec.disconnect(); } } catch (e) {}
+        try { if (recorder.toRec) { backingBus.disconnect(recorder.toRec); recorder.toRec.disconnect(); } if (recorder.recDelay) recorder.recDelay.disconnect(); } catch (e) {}
         recorder.toRec = null; recorder.recDest = null; recorder.mr = null;
         resolve({ blob, mime: type, duration });
       };
@@ -1040,7 +1060,7 @@ const AudioEngine = (() => {
   return {
     ensure, now, pop, tick, chime, nope, sparkle, pluck, strum, click, STYLES,
     startBacking, stopBacking, setBackingVolume, get backingPlaying() { return backing.playing; },
-    openInput, closeInput, detectPitch, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
+    openInput, closeInput, detectPitch, estimatedLatencyMs, inputBuffer, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
     get inputOpen() { return !!recorder.stream; },
   };
 })();
@@ -2855,7 +2875,7 @@ function StudioView(cfg = {}, opts = {}) {
       AudioEngine.setMonitor(st.settings.monitor);
       if (!AudioEngine.backingPlaying && style !== 'metronome') startPlay();
       if (!AudioEngine.backingPlaying && style === 'metronome') startPlay();
-      AudioEngine.startRecording({ includeBacking: st.settings.includeBacking, backingLevel: st.settings.backingInRec });
+      AudioEngine.startRecording({ includeBacking: st.settings.includeBacking, backingLevel: st.settings.backingInRec, syncMs: st.settings.syncMs ?? AudioEngine.estimatedLatencyMs() });
       recBtn.classList.add('on');
       recStatus.innerHTML = '';
       recStatus.append(h('span', { class: 'recdot' }), ' Recording…');
@@ -2944,9 +2964,11 @@ function StudioView(cfg = {}, opts = {}) {
       h('div', { class: 'row', style: { justifyContent: 'center' } }, recBtn),
       h('div', { class: 'row' }, recTime, meter),
       recStatus,
+      opts.mode === 'session' ? null : h('button', { class: 'btn sm ghost', onclick: () => { cleanupStudio(); App.go('calibrate'); } }, `⏱ Recording sync: ${st.settings.syncMs ?? 'auto'}${st.settings.syncMs != null ? ' ms' : ''} · calibrate`),
       opts.footer || null));
     renderFretboard();
   }
+  function cleanupStudio() { cancelAnimationFrame(meterRAF); if (AudioEngine.isRecording()) AudioEngine.stopRecording(); AudioEngine.stopBacking(); AudioEngine.closeInput(); }
   render();
   root.cleanup = () => { cancelAnimationFrame(meterRAF); if (AudioEngine.isRecording()) AudioEngine.stopRecording(); AudioEngine.stopBacking(); AudioEngine.closeInput(); };
   return root;
@@ -3646,6 +3668,7 @@ function ProgressView() {
     h('div', { class: 'row between' }, h('span', null, 'Backing level in recordings'), recLbl),
     h('input', { type: 'range', class: 'slider', min: 0.1, max: 1, step: 0.05, value: set.backingInRec, oninput: e => { set.backingInRec = +e.target.value; recLbl.textContent = Math.round(set.backingInRec * 100) + '%'; Store.save(); } }),
     h('div', { class: 'row between' }, h('div', null, h('div', null, 'Tap sounds'), h('div', { class: 'small muted' }, 'Soft bubble pop when you tap buttons')), toggleEl(set.uiSounds !== false, v => { set.uiSounds = v; Store.save(); })),
+    h('button', { class: 'btn sm', onclick: () => App.go('calibrate') }, `⏱ Recording sync: ${set.syncMs != null ? set.syncMs + ' ms' : 'auto'} · calibrate`),
     h('div', { class: 'row between' }, h('div', null, h('div', null, 'Hear my guitar through the app'), h('div', { class: 'small muted' }, 'Off with the Pulze (it already plays your guitar). Adds delay.')), toggleEl(set.monitor, v => { set.monitor = v; Store.save(); })),
   ));
 
@@ -3673,7 +3696,7 @@ function ProgressView() {
       try { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.update())); } catch (e) {}
       setTimeout(() => location.reload(), 400);
     } }, '🔄 Update the app now'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.7.3 · your progress is never touched by updates')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.8 · your progress is never touched by updates')));
   return root;
 }
 
@@ -4194,6 +4217,101 @@ function teacherNote() {
   return { text: 'You’ve done every lesson! Keep recording solos and compare them with your first takes.', cta: 'Studio', go: () => App.go('studio') };
 }
 
+// ---------- Recording sync calibration ----------
+// The app plays clicks; you hit muted strings on each click. It measures how late your guitar arrives
+// compared to when the click was generated, and uses that to line up the backing in your recordings.
+function CalibrateView() {
+  const st = Store.state;
+  const root = h('div', { class: 'stack' });
+  root.appendChild(topBar('Recording sync', { back: () => { stop(); App.go('studio'); } }));
+  const status = h('p', { class: 'muted center' }, '');
+  const big = h('div', { class: 'livenote', style: { fontSize: '56px' } }, '–');
+  const beats = h('div', { class: 'row', style: { justifyContent: 'center' } }, Array.from({ length: 8 }, () => h('i', { class: 'beat' })));
+  const card = h('div', { class: 'card center stack' }, big, beats, status);
+  let timer = null, active = false;
+  const cur = st.settings.syncMs;
+  const valLbl = h('b', null, cur != null ? `${cur} ms` : `auto (${AudioEngine.estimatedLatencyMs()} ms)`);
+  const slider = h('input', { type: 'range', class: 'slider', min: 0, max: 400, step: 5, value: cur ?? 0, oninput: e => { st.settings.syncMs = +e.target.value; Store.save(); valLbl.textContent = `${st.settings.syncMs} ms`; } });
+
+  root.append(
+    h('div', { class: 'card stack' },
+      h('h3', null, 'Why your takes can sound late'),
+      h('p', { class: 'small muted' }, 'The backing takes a moment to reach your ears, and your guitar takes a moment to come back into the iPhone. In the recording, your playing ends up slightly behind the backing. Measure it once and the app lines them up for you.')),
+    h('div', { class: 'card stack' },
+      h('h3', null, 'How to measure'),
+      h('p', { class: 'small' }, '1. Plug in the Pulze and headphones, exactly like when you record.'),
+      h('p', { class: 'small' }, '2. Mute the strings with your fretting hand.'),
+      h('p', { class: 'small' }, '3. You’ll hear 4 count-in clicks, then 8 clicks. Strum the muted strings exactly ON each of the 8 clicks.')),
+    card,
+    h('button', { class: 'btn primary big block', onclick: () => run() }, '⏱ Start measuring'),
+    h('div', { class: 'card stack' },
+      h('div', { class: 'row between' }, h('span', null, 'Recording sync'), valLbl),
+      slider,
+      h('p', { class: 'small muted' }, 'Fine-tune by hand: if your guitar still sounds late in the Journal, move it right. If it sounds early, move it left.'),
+      h('button', { class: 'btn sm', onclick: () => { st.settings.syncMs = null; Store.save(); valLbl.textContent = `auto (${AudioEngine.estimatedLatencyMs()} ms)`; slider.value = 0; } }, 'Reset to auto')));
+
+  function stop() { active = false; clearInterval(timer); AudioEngine.closeInput(); }
+
+  async function run() {
+    if (active) return;
+    try {
+      AudioEngine.ensure();
+      await AudioEngine.openInput(st.settings.inputId);
+      AudioEngine.setInputGain(st.settings.inputGain);
+      AudioEngine.setMonitor(false);
+    } catch (e) { UI.toast('Could not open the input. Allow microphone access.'); return; }
+    active = true;
+    status.textContent = 'Listening to the room…';
+    big.textContent = '…';
+    [...beats.children].forEach(x => x.classList.remove('on'));
+    // 1) measure the noise floor
+    let floor = 0, n = 0;
+    const t0 = performance.now();
+    await new Promise(r => { const iv = setInterval(() => { const b = AudioEngine.inputBuffer(); if (b) { let m = 0; for (const x of b.data) m = Math.max(m, Math.abs(x)); floor += m; n++; } if (performance.now() - t0 > 500) { clearInterval(iv); r(); } }, 20); });
+    floor = n ? floor / n : 0.01;
+    const thresh = Math.max(0.03, floor * 5);
+    // 2) schedule clicks: 4 count-in + 8 measured, 100 BPM
+    const spb = 0.6, start = AudioEngine.now() + 0.4;
+    const clicks = [];
+    for (let i = 0; i < 12; i++) { const t = start + i * spb; AudioEngine.click(t, i % 4 === 0); if (i >= 4) clicks.push(t); }
+    status.textContent = 'Count-in… then strum on every click';
+    const hits = [];
+    let on = false, lastOn = 0;
+    timer = setInterval(() => {
+      const b = AudioEngine.inputBuffer(); if (!b) return;
+      const now = b.end;
+      // visual beat
+      const k = Math.floor((now - clicks[0]) / spb);
+      [...beats.children].forEach((x, i) => x.classList.toggle('on', i <= k && k < 8));
+      let peak = 0; for (let i = b.data.length - 256; i < b.data.length; i++) peak = Math.max(peak, Math.abs(b.data[i]));
+      if (!on && peak > thresh && now - lastOn > 0.2) {
+        // locate the onset precisely inside the buffer
+        let idx = -1; for (let i = 0; i < b.data.length; i++) if (Math.abs(b.data[i]) > thresh) { idx = i; break; }
+        if (idx >= 0) { const onset = now - (b.data.length - idx) / b.sr; hits.push(onset); lastOn = onset; }
+        on = true;
+      } else if (on && peak < thresh * 0.5) on = false;
+      if (now > clicks[clicks.length - 1] + 0.6) finish(clicks, hits);
+    }, 8);
+  }
+  function finish(clicks, hits) {
+    clearInterval(timer); AudioEngine.closeInput(); active = false;
+    const lat = [];
+    clicks.forEach(c => { const m = hits.filter(x => x > c - 0.1 && x < c + 0.45).sort((a, b) => Math.abs(a - c) - Math.abs(b - c))[0]; if (m !== undefined) lat.push((m - c) * 1000); });
+    [...beats.children].forEach(x => x.classList.remove('on'));
+    if (lat.length < 5) { big.textContent = '?'; status.textContent = `Only ${lat.length} hits detected. Strum a bit harder, exactly on the clicks, and try again.`; sfx('nope'); return; }
+    lat.sort((a, b) => a - b);
+    const med = Math.max(0, Math.round(lat[Math.floor(lat.length / 2)] / 5) * 5);
+    const spread = Math.round(lat[lat.length - 2] - lat[1]);
+    st.settings.syncMs = med; Store.save();
+    big.textContent = `${med} ms`;
+    valLbl.textContent = `${med} ms`; slider.value = med;
+    status.textContent = spread > 80 ? `Saved. Your hits were a bit uneven (±${Math.round(spread / 2)} ms), so try once more to be sure.` : 'Saved! Your next recordings will be lined up with the backing.';
+    sfx('chime');
+  }
+  root.cleanup = stop;
+  return root;
+}
+
 // ---------- App shell & router ----------
 const App = {
   current: null, view: null,
@@ -4210,6 +4328,7 @@ const App = {
     ear: { view: EarView, tab: 'ear' },
     playit: { view: PlayItView, tab: 'ear' },
     tuner: { view: TunerView, tab: 'ear' },
+    calibrate: { view: CalibrateView, tab: 'studio' },
     chaptertest: { view: ChapterTestView, tab: 'learn' },
     earRun: { view: EarRunView, tab: 'ear' },
     studio: { view: StudioScreen, tab: 'studio' },

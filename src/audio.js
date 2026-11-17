@@ -387,6 +387,23 @@ const AudioEngine = (() => {
     return { freq, midi, pc: mod12(midi), cents: Math.round((midiF - midi) * 100), clarity: 1 - a1, rms };
   }
 
+  function estimatedLatencyMs() {
+    try {
+      ensure();
+      let ms = ((ctx.outputLatency || 0) + (ctx.baseLatency || 0)) * 1000;
+      const tr = recorder.stream && recorder.stream.getAudioTracks()[0];
+      const il = tr && tr.getSettings && tr.getSettings().latency;
+      if (il) ms += il * 1000;
+      return Math.round(ms);
+    } catch (e) { return 0; }
+  }
+  function inputBuffer() {
+    if (!recorder.analyser) return null;
+    const a = new Float32Array(recorder.analyser.fftSize);
+    recorder.analyser.getFloatTimeDomainData(a);
+    return { data: a, end: ctx.currentTime, sr: ctx.sampleRate };
+  }
+
   function closeInput() {
     if (recorder.mr && recorder.mr.state !== 'inactive') { try { recorder.mr.stop(); } catch (e) {} }
     setMonitor(false);
@@ -396,7 +413,7 @@ const AudioEngine = (() => {
     setSession('playback');
   }
 
-  function startRecording({ includeBacking = true, backingLevel = 0.6 } = {}) {
+  function startRecording({ includeBacking = true, backingLevel = 0.6, syncMs = 0 } = {}) {
     if (!recorder.stream) throw new Error('Input not open');
     const mime = pickMime();
     let streamToRecord = null;
@@ -405,7 +422,10 @@ const AudioEngine = (() => {
       recorder.inGain.connect(recorder.recDest);
       if (includeBacking) {
         recorder.toRec = ctx.createGain(); recorder.toRec.gain.value = backingLevel;
-        backingBus.connect(recorder.toRec); recorder.toRec.connect(recorder.recDest);
+        // latency compensation: the guitar reaches the app later than the backing was generated
+        // (output latency + your reaction to what you hear + input latency), so delay the backing by the same amount
+        recorder.recDelay = ctx.createDelay(1.5); recorder.recDelay.delayTime.value = Math.max(0, Math.min(1.4, syncMs / 1000));
+        backingBus.connect(recorder.toRec); recorder.toRec.connect(recorder.recDelay); recorder.recDelay.connect(recorder.recDest);
       }
       streamToRecord = recorder.recDest.stream;
     } catch (e) { streamToRecord = recorder.stream; }
@@ -427,7 +447,7 @@ const AudioEngine = (() => {
         const type = mr.mimeType || (recorder.chunks[0] && recorder.chunks[0].type) || 'audio/mp4';
         const blob = new Blob(recorder.chunks, { type });
         try { recorder.recDest && recorder.inGain && recorder.inGain.disconnect(recorder.recDest); } catch (e) {}
-        try { if (recorder.toRec) { backingBus.disconnect(recorder.toRec); recorder.toRec.disconnect(); } } catch (e) {}
+        try { if (recorder.toRec) { backingBus.disconnect(recorder.toRec); recorder.toRec.disconnect(); } if (recorder.recDelay) recorder.recDelay.disconnect(); } catch (e) {}
         recorder.toRec = null; recorder.recDest = null; recorder.mr = null;
         resolve({ blob, mime: type, duration });
       };
@@ -447,7 +467,7 @@ const AudioEngine = (() => {
   return {
     ensure, now, pop, tick, chime, nope, sparkle, pluck, strum, click, STYLES,
     startBacking, stopBacking, setBackingVolume, get backingPlaying() { return backing.playing; },
-    openInput, closeInput, detectPitch, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
+    openInput, closeInput, detectPitch, estimatedLatencyMs, inputBuffer, startRecording, stopRecording, isRecording, elapsed, level, setMonitor, setInputGain, listInputs,
     get inputOpen() { return !!recorder.stream; },
   };
 })();

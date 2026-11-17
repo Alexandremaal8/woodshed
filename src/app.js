@@ -14,6 +14,7 @@ const App = {
     ear: { view: EarView, tab: 'ear' },
     playit: { view: PlayItView, tab: 'ear' },
     tuner: { view: TunerView, tab: 'ear' },
+    calibrate: { view: CalibrateView, tab: 'studio' },
     chaptertest: { view: ChapterTestView, tab: 'learn' },
     earRun: { view: EarRunView, tab: 'ear' },
     studio: { view: StudioScreen, tab: 'studio' },

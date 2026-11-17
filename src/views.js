@@ -518,6 +518,7 @@ function ProgressView() {
     h('div', { class: 'row between' }, h('span', null, 'Backing level in recordings'), recLbl),
     h('input', { type: 'range', class: 'slider', min: 0.1, max: 1, step: 0.05, value: set.backingInRec, oninput: e => { set.backingInRec = +e.target.value; recLbl.textContent = Math.round(set.backingInRec * 100) + '%'; Store.save(); } }),
     h('div', { class: 'row between' }, h('div', null, h('div', null, 'Tap sounds'), h('div', { class: 'small muted' }, 'Soft bubble pop when you tap buttons')), toggleEl(set.uiSounds !== false, v => { set.uiSounds = v; Store.save(); })),
+    h('button', { class: 'btn sm', onclick: () => App.go('calibrate') }, `⏱ Recording sync: ${set.syncMs != null ? set.syncMs + ' ms' : 'auto'} · calibrate`),
     h('div', { class: 'row between' }, h('div', null, h('div', null, 'Hear my guitar through the app'), h('div', { class: 'small muted' }, 'Off with the Pulze (it already plays your guitar). Adds delay.')), toggleEl(set.monitor, v => { set.monitor = v; Store.save(); })),
   ));
 
@@ -545,6 +546,6 @@ function ProgressView() {
       try { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.update())); } catch (e) {}
       setTimeout(() => location.reload(), 400);
     } }, '🔄 Update the app now'),
-    h('p', { class: 'tiny center' }, 'Woodshed v1.7.3 · your progress is never touched by updates')));
+    h('p', { class: 'tiny center' }, 'Woodshed v1.8 · your progress is never touched by updates')));
   return root;
 }
